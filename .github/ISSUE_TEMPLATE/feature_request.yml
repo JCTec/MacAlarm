@@ -1,0 +1,49 @@
+name: Feature request
+description: Suggest a new MacAlarm capability or improvement.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user need or security workflow should this solve?
+      placeholder: I want to prioritize a custom audio detector event without changing the built-in filters.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the smallest useful behavior.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Agent event collection
+        - SwiftUI timeline
+        - Filter configuration
+        - Notifications
+        - Installer / packaging
+        - Remote checkpoint / future server handoff
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: Safety and consent
+      options:
+        - label: This feature can be implemented without keylogging, screenshots, hidden surveillance, private-content capture, or bypassing macOS privacy controls.
+          required: true
+        - label: This feature can be documented clearly enough for users to understand what is recorded.
+          required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Optional. Mention simpler approaches, scripts, or existing MacAlarm hooks.

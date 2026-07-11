@@ -1,0 +1,9 @@
+.build/
+.venv/
+.venv-audio-events/
+.state/
+dist/
+exports/
+__pycache__/
+*.pyc
+.DS_Store

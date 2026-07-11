@@ -1,0 +1,54 @@
+name: Security contact request
+description: Request a private reporting path for a security-sensitive issue.
+title: "[Security contact request]: "
+labels: ["security"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not publish exploit details, proof-of-concept code, private ledger records, hostnames, paths, tokens, or secrets here.
+
+        Use this template only when private vulnerability reporting is not available. Keep the public issue minimal and ask for a private contact path.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Ledger / hash verification
+        - Secret storage / file permissions
+        - LaunchAgent / installer behavior
+        - Notification delivery
+        - Custom event ingestion
+        - Future remote checkpoint / server handoff
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact category
+      options:
+        - Tamper evidence bypass
+        - Secret exposure
+        - Unintended persistence
+        - Permission or privacy boundary issue
+        - Unsafe event ingestion
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: request
+    attributes:
+      label: Private contact request
+      description: Ask for a private reporting path without including sensitive details.
+      value: |
+        I believe I found a security-sensitive issue and need a private reporting path.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Public safety check
+      options:
+        - label: I did not include exploit details, proof-of-concept code, private logs, secrets, hostnames, usernames, or paths.
+          required: true

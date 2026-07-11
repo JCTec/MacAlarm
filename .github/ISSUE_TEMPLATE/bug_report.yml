@@ -1,0 +1,83 @@
+name: Bug report
+description: Report a reproducible MacAlarm defect.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping make MacAlarm more reliable. Do not paste private ledger records, hostnames, paths, tokens, or exploit details into a public issue.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What went wrong?
+      placeholder: The viewer stops updating after the ledger is rotated.
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Agent / LaunchAgent
+        - SwiftUI viewer
+        - Installer / packaging
+        - Ledger / hash verification
+        - Notifications
+        - Custom events
+        - Documentation
+        - Unknown
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Use a minimal, public-safe reproduction.
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "14.6, 15.5, 26.5.1"
+    validations:
+      required: true
+  - type: input
+    id: swift
+    attributes:
+      label: Swift version
+      placeholder: "swift --version"
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification run
+      description: Paste the relevant public-safe command output.
+      value: |
+        ./scripts/verify-release.sh
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Public safety check
+      options:
+        - label: I removed private ledger contents, usernames, hostnames, paths, secrets, and tokens.
+          required: true
+        - label: This issue does not include exploit details that should be reported privately.
+          required: true

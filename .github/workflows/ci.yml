@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test-package:
+    name: Build, Test, Package
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Apple Toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+          swift --version
+
+      - name: Verify Release
+        run: ./scripts/verify-release.sh
+
+      - name: Package And Audit DMG
+        env:
+          MACALARM_SKIP_RELEASE_BUILD: "1"
+          MACALARM_DMG_FINDER_LAYOUT: skip
+        run: |
+          ./scripts/package-dmg.sh
+          ./scripts/audit-distribution.sh
+
+      - name: Upload Local Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacAlarm-local-artifacts
+          if-no-files-found: error
+          path: |
+            dist/MacAlarm-*.zip
+            dist/MacAlarm-*.zip.sha256
+            dist/MacAlarm-*.dmg
+            dist/MacAlarm-*.dmg.sha256
+            dist/INSTALLER.md
