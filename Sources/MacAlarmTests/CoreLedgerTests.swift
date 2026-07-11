@@ -222,5 +222,76 @@ extension MacAlarmTests {
             )
         }
 
+        await runner.run("ledger rotates segments and verifies across the whole chain") {
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent(
+                UUID().uuidString, isDirectory: true)
+            defer { try? FileManager.default.removeItem(at: directory) }
+
+            let ledgerURL = directory.appendingPathComponent("events.jsonl")
+            let key = Data("unit-test-key".utf8)
+            let ledger = try HashChainLedger(fileURL: ledgerURL, hmacKey: key, maxFileBytes: 1)
+
+            try await ledger.append(AlarmEvent(source: "test", name: "one"))
+            try await ledger.append(AlarmEvent(source: "test", name: "two"))
+            try await ledger.append(AlarmEvent(source: "test", name: "three"))
+
+            let archives = try HashChainLedger.rotatedSegmentURLs(for: ledgerURL)
+            try expect(archives.count == 2, "each over-limit append should rotate one archived segment")
+
+            let activeRecords = try await ledger.readRecords()
+            try expect(
+                activeRecords.first?.event.name == "ledger.rotated",
+                "rotated active segment should start with a rotation record"
+            )
+            try expect(
+                activeRecords.first?.previousHash != HashChainLedger.zeroHash,
+                "rotation record should continue the previous segment's chain"
+            )
+
+            let allRecords = try await ledger.readAllRecords()
+            try expect(allRecords.count == 5, "chain should keep three events plus two rotation records")
+            try expect(
+                allRecords.map(\.event.name).filter { $0 != "ledger.rotated" } == ["one", "two", "three"],
+                "chain should preserve event order across segments"
+            )
+
+            let verification = try await ledger.verify()
+            try expect(verification.isValid, "rotated chain should verify across segments")
+            try expect(verification.recordCount == 5, "verification should count records in every segment")
+            try expect(
+                verification.lastHash == allRecords.last?.hash,
+                "verification should expose the active segment's chain head"
+            )
+
+            var previousHash = HashChainLedger.zeroHash
+            for record in allRecords {
+                try expect(record.previousHash == previousHash, "chain should stay linked across segments")
+                previousHash = record.hash
+            }
+        }
+
+        await runner.run("ledger rotation detects tampering inside an archived segment") {
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent(
+                UUID().uuidString, isDirectory: true)
+            defer { try? FileManager.default.removeItem(at: directory) }
+
+            let ledgerURL = directory.appendingPathComponent("events.jsonl")
+            let key = Data("unit-test-key".utf8)
+            let ledger = try HashChainLedger(fileURL: ledgerURL, hmacKey: key, maxFileBytes: 1)
+
+            try await ledger.append(AlarmEvent(source: "test", name: "original"))
+            try await ledger.append(AlarmEvent(source: "test", name: "second"))
+
+            let archives = try HashChainLedger.rotatedSegmentURLs(for: ledgerURL)
+            let archiveURL = try require(archives.first, "rotation should archive a segment")
+
+            var contents = try String(contentsOf: archiveURL, encoding: .utf8)
+            contents = contents.replacingOccurrences(of: "original", with: "tampered")
+            try contents.write(to: archiveURL, atomically: true, encoding: .utf8)
+
+            let verification = try await ledger.verify()
+            try expect(!verification.isValid, "tampered archived segment should fail verification")
+        }
+
     }
 }

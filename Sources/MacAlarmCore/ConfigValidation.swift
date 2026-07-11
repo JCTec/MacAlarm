@@ -34,6 +34,32 @@ public enum ConfigValidator {
                     message: "remoteCheckpoint is enabled without endpointURL; outbox files will still be created"))
         }
 
+        if let maxLedgerFileBytes = config.storage.maxLedgerFileBytes {
+            if maxLedgerFileBytes < 1 {
+                issues.append(
+                    ConfigIssue(
+                        message: "storage.maxLedgerFileBytes must be positive when set", severity: .critical))
+            } else if maxLedgerFileBytes < 1_048_576 {
+                issues.append(
+                    ConfigIssue(
+                        message: "storage.maxLedgerFileBytes below 1 MB will rotate the ledger very frequently"))
+            }
+        }
+
+        if config.hashAnchor.enabled {
+            if config.hashAnchor.directory.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                issues.append(
+                    ConfigIssue(message: "hashAnchor is enabled with an empty directory", severity: .critical))
+            }
+
+            if config.hashAnchor.anchorEveryHeartbeats < 1 {
+                issues.append(
+                    ConfigIssue(
+                        message:
+                            "hashAnchor.anchorEveryHeartbeats is below 1; heartbeat anchoring is disabled"))
+            }
+        }
+
         if config.telegram.enabled {
             do {
                 _ = try FileSecretStore.fileName(forAccount: config.telegram.botTokenAccount)

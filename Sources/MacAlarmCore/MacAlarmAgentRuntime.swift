@@ -17,7 +17,8 @@ public final class MacAlarmAgentRuntime {
 
         let ledger = try HashChainLedger(
             fileURL: PathResolver.fileURL(config.storage.ledgerPath),
-            hmacKey: hmacKey
+            hmacKey: hmacKey,
+            maxFileBytes: config.storage.maxLedgerFileBytes
         )
         let ruleEngine = RuleEngine(rules: config.rules)
         let dispatcher = AlarmDispatcher(notifiers: Self.makeNotifiers(config))
@@ -28,13 +29,18 @@ public final class MacAlarmAgentRuntime {
                 endpointURL: config.remoteCheckpoint.endpointURL
             )
             : DisabledRemoteCheckpointSink()
+        let anchorSink: any LedgerHashAnchorSink =
+            config.hashAnchor.enabled
+            ? FileLedgerHashAnchorSink(directory: PathResolver.fileURL(config.hashAnchor.directory))
+            : DisabledLedgerHashAnchorSink()
 
         self.pipeline = EventPipeline(
             config: config,
             ledger: ledger,
             ruleEngine: ruleEngine,
             dispatcher: dispatcher,
-            checkpointSink: checkpointSink
+            checkpointSink: checkpointSink,
+            anchorSink: anchorSink
         )
         self.statusStore = AgentStatusStore(config: config)
     }
@@ -102,6 +108,10 @@ public final class MacAlarmAgentRuntime {
         if config.remoteCheckpoint.enabled {
             try await pipeline.enqueueCheckpoint(reason: "agent-started")
         }
+
+        if config.hashAnchor.enabled {
+            await pipeline.writeAnchorReportingFailure(reason: "agent-started")
+        }
     }
 
     public func stop() async {
@@ -134,6 +144,9 @@ public final class MacAlarmAgentRuntime {
         )
         if config.remoteCheckpoint.enabled {
             try? await pipeline.enqueueCheckpoint(reason: "agent-stopped")
+        }
+        if config.hashAnchor.enabled {
+            await pipeline.writeAnchorReportingFailure(reason: "agent-stopped")
         }
 
         isRunning = false

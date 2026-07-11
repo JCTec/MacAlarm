@@ -12,6 +12,7 @@ public struct MacAlarmConfig: Codable, Equatable, Sendable {
     public var notifications: NotificationConfig
     public var telegram: TelegramConfig
     public var remoteCheckpoint: RemoteCheckpointConfig
+    public var hashAnchor: HashAnchorConfig
     public var rules: [AlarmRule]
 
     enum CodingKeys: String, CodingKey {
@@ -26,6 +27,7 @@ public struct MacAlarmConfig: Codable, Equatable, Sendable {
         case notifications
         case telegram
         case remoteCheckpoint
+        case hashAnchor
         case rules
     }
 
@@ -41,6 +43,7 @@ public struct MacAlarmConfig: Codable, Equatable, Sendable {
         notifications: NotificationConfig = .default,
         telegram: TelegramConfig = .default,
         remoteCheckpoint: RemoteCheckpointConfig = .default,
+        hashAnchor: HashAnchorConfig = .default,
         rules: [AlarmRule] = MacAlarmConfig.defaultRules
     ) {
         self.schemaVersion = schemaVersion
@@ -54,6 +57,7 @@ public struct MacAlarmConfig: Codable, Equatable, Sendable {
         self.notifications = notifications
         self.telegram = telegram
         self.remoteCheckpoint = remoteCheckpoint
+        self.hashAnchor = hashAnchor
         self.rules = rules
     }
 
@@ -71,6 +75,7 @@ public struct MacAlarmConfig: Codable, Equatable, Sendable {
         self.telegram = try container.decodeIfPresent(TelegramConfig.self, forKey: .telegram) ?? .default
         self.remoteCheckpoint =
             try container.decodeIfPresent(RemoteCheckpointConfig.self, forKey: .remoteCheckpoint) ?? .default
+        self.hashAnchor = try container.decodeIfPresent(HashAnchorConfig.self, forKey: .hashAnchor) ?? .default
         self.rules = try container.decodeIfPresent([AlarmRule].self, forKey: .rules) ?? Self.defaultRules
     }
 
@@ -125,15 +130,21 @@ public struct StorageConfig: Codable, Equatable, Sendable {
     public var ledgerPath: String
     public var outboxDirectory: String
     public var runtimeDirectory: String
+    /// Optional size limit for the active ledger file. When set, the ledger
+    /// rotates the active file into an archived segment on append and starts a
+    /// new segment that continues the same hash chain. Nil disables rotation.
+    public var maxLedgerFileBytes: Int?
 
     public init(
         ledgerPath: String = "~/Library/Application Support/MacAlarm/events.jsonl",
         outboxDirectory: String = "~/Library/Application Support/MacAlarm/outbox",
-        runtimeDirectory: String = "~/Library/Application Support/MacAlarm/runtime"
+        runtimeDirectory: String = "~/Library/Application Support/MacAlarm/runtime",
+        maxLedgerFileBytes: Int? = nil
     ) {
         self.ledgerPath = ledgerPath
         self.outboxDirectory = outboxDirectory
         self.runtimeDirectory = runtimeDirectory
+        self.maxLedgerFileBytes = maxLedgerFileBytes
     }
 
     public static let `default` = StorageConfig()
@@ -319,6 +330,24 @@ public struct TelegramConfig: Codable, Equatable, Sendable {
     }
 
     public static let `default` = TelegramConfig()
+}
+
+public struct HashAnchorConfig: Codable, Equatable, Sendable {
+    public var enabled: Bool
+    public var directory: String
+    public var anchorEveryHeartbeats: Int
+
+    public init(
+        enabled: Bool = true,
+        directory: String = "~/Library/Mobile Documents/com~apple~CloudDocs/MacAlarm",
+        anchorEveryHeartbeats: Int = 5
+    ) {
+        self.enabled = enabled
+        self.directory = directory
+        self.anchorEveryHeartbeats = anchorEveryHeartbeats
+    }
+
+    public static let `default` = HashAnchorConfig()
 }
 
 public struct RemoteCheckpointConfig: Codable, Equatable, Sendable {

@@ -21,7 +21,13 @@ A normal per-user install may create:
 ~/Library/Logs/MacAlarm/
 
 ~/Library/LaunchAgents/dev.jc.macalarm.agent.plist
+
+~/Library/Mobile Documents/com~apple~CloudDocs/MacAlarm/
+  anchor-latest.json
+  anchor-history.jsonl
 ```
+
+The iCloud Drive `MacAlarm` folder holds ledger hash anchors (see `hashAnchor` in `config.json`). It syncs off the Mac by design; a full cleanup should remove it from iCloud Drive as well. If `storage.maxLedgerFileBytes` is set, rotated ledger segments named `events-rotated-*.jsonl` sit beside `events.jsonl`.
 
 Packaged builds prefer the visible login item helper bundled inside `MacAlarm.app`:
 

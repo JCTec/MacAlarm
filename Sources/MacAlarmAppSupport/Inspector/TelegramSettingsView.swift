@@ -9,7 +9,8 @@ struct TelegramSettingsView: View {
         VStack(spacing: 0) {
             PanelHeader(
                 title: "Telegram",
-                subtitle: store.config.telegram.enabled ? "Optional alarm delivery enabled" : "Optional alarm delivery disabled",
+                subtitle: store.config.telegram.enabled
+                    ? "Optional alarm delivery enabled" : "Optional alarm delivery disabled",
                 symbolName: "paperplane.fill",
                 tintColor: store.config.telegram.enabled ? .blue : .secondary
             ) {
@@ -58,7 +59,8 @@ struct TelegramSettingsView: View {
                 Button("Send Test") {
                     store.sendTest()
                 }
-                .disabled(store.isLoading || !store.config.telegram.enabled || store.config.telegram.approvedChatIDs.isEmpty)
+                .disabled(
+                    store.isLoading || !store.config.telegram.enabled || store.config.telegram.approvedChatIDs.isEmpty)
 
                 Spacer()
 
@@ -85,9 +87,11 @@ struct TelegramSettingsView: View {
 
             tokenRow
 
-            Text("Create a user-owned bot with BotFather. MacAlarm stores the token in a private local secret file, not in config.json.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Text(
+                "Create a user-owned bot with BotFather. MacAlarm stores the token in a private local secret file, not in config.json."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
         .sectionPanel(title: "Setup")
     }
@@ -118,9 +122,11 @@ struct TelegramSettingsView: View {
                 SecureField("Bot token", text: $store.tokenInput)
                     .textFieldStyle(.roundedBorder)
                 HStack {
-                    Text(store.tokenStored ? "Enter a new token to replace the stored one." : "No bot token stored yet.")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                    Text(
+                        store.tokenStored ? "Enter a new token to replace the stored one." : "No bot token stored yet."
+                    )
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
                     Spacer()
                     if store.tokenStored {
                         Button("Cancel") {
@@ -173,9 +179,11 @@ struct TelegramSettingsView: View {
                 value: $store.config.telegram.updateLimit,
                 in: 1...100
             )
-            Text("/help, /status, /latest [type] [count], /search YYYY-MM-DD YYYY-MM-DD [type]. Free-form chat is rejected.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Text(
+                "/help, /status, /latest [type] [count], /search YYYY-MM-DD YYYY-MM-DD [type]. Free-form chat is rejected."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
         .sectionPanel(title: "Commands")
     }
@@ -232,7 +240,8 @@ struct TelegramSettingsView: View {
         Binding(
             get: { values.wrappedValue.joined(separator: ", ") },
             set: { newValue in
-                values.wrappedValue = newValue
+                values.wrappedValue =
+                    newValue
                     .split(separator: ",")
                     .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                     .filter { !$0.isEmpty }

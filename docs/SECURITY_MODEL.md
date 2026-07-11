@@ -26,7 +26,9 @@ The ledger signs each record with HMAC-SHA256 over:
 1. the normalized event
 2. the previous record hash
 
-Changing, deleting, or reordering records breaks verification unless the attacker also has the HMAC key. The default per-user background recorder stores that key in a private file under Application Support so background recording never blocks on Keychain UI; future remote checkpoints should periodically preserve the latest hash outside the Mac.
+Changing, deleting, or reordering records breaks verification unless the attacker also has the HMAC key. The default per-user background recorder stores that key in a private file under Application Support so background recording never blocks on Keychain UI.
+
+Because a same-user attacker who obtains that key could rewrite or truncate the local chain, the agent also anchors the chain head outside its own trust domain. When `hashAnchor` is enabled (the default), the agent periodically writes the current record count and last hash to `hashAnchor.directory`, which defaults to a MacAlarm folder in iCloud Drive so anchors leave the Mac through file sync. `anchor-latest.json` is the fast comparison surface and `anchor-history.jsonl` is append-only, so rolling back the latest anchor is itself detectable. Anchors are written on agent start, on stop, and every `hashAnchor.anchorEveryHeartbeats` heartbeats; `LedgerAnchorComparison` reports truncation (fewer records than the anchor saw) and rewrites (a different hash at the anchored position). Anchor write failures never block recording — the agent records a single `anchor.write.failed` warning event instead, which matters on Macs where iCloud Drive is signed out.
 
 The ledger coordinates cooperative local processes with advisory file locks. Writers hold an exclusive lock during append; verification, proof export, and the live timeline loader hold shared locks while reading ledger bytes, which prevents readers from copying a partial append from another MacAlarm process.
 

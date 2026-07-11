@@ -207,7 +207,8 @@ struct MacAlarmCLI {
     private static func telegramApprove(_ arguments: [String], denied: Bool) async throws {
         let configPath = try requiredOption("--config", in: arguments)
         var config = try MacAlarmConfig.load(from: URL(fileURLWithPath: configPath))
-        let chatID = try Int64(requiredOption("--chat-id", in: arguments))
+        let chatID =
+            try Int64(requiredOption("--chat-id", in: arguments))
             ?? { throw MacAlarmError.invalidConfiguration("--chat-id must be an integer") }()
 
         if denied {
@@ -228,8 +229,9 @@ struct MacAlarmCLI {
         guard config.telegram.enabled else {
             throw MacAlarmError.invalidConfiguration("telegram.enabled is false")
         }
-        guard let tokenData = try FileSecretStore.installedStore(for: config)
-            .readSecret(account: config.telegram.botTokenAccount),
+        guard
+            let tokenData = try FileSecretStore.installedStore(for: config)
+                .readSecret(account: config.telegram.botTokenAccount),
             let token = String(data: tokenData, encoding: .utf8)?
                 .trimmingCharacters(in: .whitespacesAndNewlines),
             !token.isEmpty

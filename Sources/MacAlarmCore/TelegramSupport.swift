@@ -198,7 +198,8 @@ public struct TelegramClient: Sendable {
 
         let decoded = try CanonicalJSON.decoder.decode(TelegramAPIResponse<T>.self, from: data)
         guard decoded.ok, let result = decoded.result else {
-            throw MacAlarmError.invalidConfiguration("Telegram \(method) failed: \(decoded.description ?? "unknown error")")
+            throw MacAlarmError.invalidConfiguration(
+                "Telegram \(method) failed: \(decoded.description ?? "unknown error")")
         }
         return result
     }
@@ -347,7 +348,8 @@ public enum TelegramCommandProcessor {
         let end = Calendar(identifier: .gregorian).date(byAdding: .day, value: 1, to: endStart) ?? endStart
         let query = parts.count >= 4 ? parts[3] : nil
         return format(
-            records: records
+            records:
+                records
                 .filter { $0.event.observedAt >= start && $0.event.observedAt < end }
                 .filter { matches($0.event, query: query) }
                 .suffix(20)
@@ -368,7 +370,8 @@ public enum TelegramCommandProcessor {
     private static func format(records: some Sequence<LedgerRecord>) -> String {
         let lines = records.map { record in
             let event = record.event
-            return "\(Self.shortDateFormatter.string(from: event.observedAt)) \(event.severity.rawValue) \(event.source).\(event.name)"
+            return
+                "\(Self.shortDateFormatter.string(from: event.observedAt)) \(event.severity.rawValue) \(event.source).\(event.name)"
         }
         guard !lines.isEmpty else {
             return "No matching MacAlarm events."
@@ -449,7 +452,8 @@ public actor TelegramCommandPoller {
             return
         }
 
-        let records = try LedgerFileReader.readDataWithSharedLock(fileURL: PathResolver.fileURL(config.storage.ledgerPath))
+        let records = try LedgerFileReader.readDataWithSharedLock(
+            fileURL: PathResolver.fileURL(config.storage.ledgerPath))
         let decoded = try decodeRecords(records)
         let response = TelegramCommandProcessor.response(text: text, records: decoded, config: config)
         try await client.sendMessage(chatID: chatID, text: response)
@@ -459,7 +463,9 @@ public actor TelegramCommandPoller {
         guard !data.isEmpty, let text = String(data: data, encoding: .utf8) else {
             return []
         }
-        return try text.split(separator: "\n").map { try CanonicalJSON.decoder.decode(LedgerRecord.self, from: Data($0.utf8)) }
+        return try text.split(separator: "\n").map {
+            try CanonicalJSON.decoder.decode(LedgerRecord.self, from: Data($0.utf8))
+        }
     }
 
     private func displayName(_ message: TelegramMessage) -> String? {

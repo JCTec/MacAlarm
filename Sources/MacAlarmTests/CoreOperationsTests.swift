@@ -1,6 +1,10 @@
 import Foundation
 import MacAlarmCore
 
+#if canImport(Darwin)
+    import Darwin
+#endif
+
 extension MacAlarmTests {
     static func runCoreOperationsTests(_ runner: TestRunner) async {
         await runner.run("custom log event payload round-trips") {
@@ -161,6 +165,87 @@ extension MacAlarmTests {
             try expect(search.contains("filesystem.path.changed"), "search should filter date range and type")
             try expect(status.contains("Records: 2"), "status should include record count")
             try expect(chat.contains("only accepts commands"), "free text should be rejected")
+        }
+
+        await runner.run("ledger hash anchor sink writes latest anchor and append-only history") {
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent(
+                UUID().uuidString, isDirectory: true)
+            defer { try? FileManager.default.removeItem(at: directory) }
+
+            let sink = FileLedgerHashAnchorSink(directory: directory)
+            let first = LedgerHashAnchor(
+                deviceID: "device",
+                ledgerPath: "/tmp/events.jsonl",
+                recordCount: 1,
+                lastHash: String(repeating: "a", count: 64),
+                isLedgerValid: true,
+                reason: "unit-test"
+            )
+            let second = LedgerHashAnchor(
+                deviceID: "device",
+                ledgerPath: "/tmp/events.jsonl",
+                recordCount: 2,
+                lastHash: String(repeating: "b", count: 64),
+                isLedgerValid: true,
+                reason: "heartbeat"
+            )
+
+            try await sink.write(first)
+            try await sink.write(second)
+
+            let latest = try require(
+                FileLedgerHashAnchorSink.readLatest(directory: directory), "latest anchor should decode")
+            try expect(latest.lastHash == second.lastHash, "latest anchor should reflect the newest write")
+            try expect(latest.recordCount == 2, "latest anchor should carry the newest record count")
+
+            let latestURL = directory.appendingPathComponent(FileLedgerHashAnchorSink.latestFileName)
+            try expect(latestURL.fileMode == Int(S_IRUSR | S_IWUSR), "latest anchor should be mode 0600")
+
+            let historyURL = directory.appendingPathComponent(FileLedgerHashAnchorSink.historyFileName)
+            let history = try String(contentsOf: historyURL, encoding: .utf8)
+                .split(separator: "\n", omittingEmptySubsequences: true)
+            try expect(history.count == 2, "history should keep every anchor write")
+        }
+
+        await runner.run("ledger anchor comparison detects truncation and rewrite") {
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent(
+                UUID().uuidString, isDirectory: true)
+            defer { try? FileManager.default.removeItem(at: directory) }
+
+            let ledgerURL = directory.appendingPathComponent("events.jsonl")
+            let ledger = try HashChainLedger(fileURL: ledgerURL, hmacKey: Data("unit-test-key".utf8))
+            try await ledger.append(AlarmEvent(source: "test", name: "one"))
+            try await ledger.append(AlarmEvent(source: "test", name: "two"))
+            try await ledger.append(AlarmEvent(source: "test", name: "three"))
+
+            let records = try await ledger.readRecords()
+            let anchor = LedgerHashAnchor(
+                deviceID: "device",
+                ledgerPath: ledgerURL.path,
+                recordCount: records.count,
+                lastHash: records[records.count - 1].hash,
+                isLedgerValid: true,
+                reason: "unit-test"
+            )
+
+            let intact = LedgerAnchorComparison.compare(records: records, anchor: anchor)
+            try expect(intact.matches, "untouched ledger should match its anchor")
+
+            let truncated = LedgerAnchorComparison.compare(records: Array(records.dropLast()), anchor: anchor)
+            try expect(!truncated.matches, "truncated ledger should not match its anchor")
+            try expect(
+                truncated.issues.first?.contains("deleted") == true,
+                "truncation issue should mention deleted records"
+            )
+
+            var rewritten = records
+            rewritten[records.count - 1].hash = String(repeating: "f", count: 64)
+            let mismatch = LedgerAnchorComparison.compare(records: rewritten, anchor: anchor)
+            try expect(!mismatch.matches, "rewritten chain head should not match its anchor")
+            try expect(
+                mismatch.issues.first?.contains("rewritten") == true,
+                "rewrite issue should mention a rewritten chain"
+            )
         }
 
     }

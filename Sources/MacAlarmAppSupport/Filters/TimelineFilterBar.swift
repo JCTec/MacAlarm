@@ -26,12 +26,12 @@ struct CategoryFilterBar: View {
                         state: state(filter),
                         hoverChanged: updateHover
                     ) {
-                            cycle(filter)
-                        }
-                        .anchorPreference(
-                            key: CategoryFilterButtonBoundsKey.self,
-                            value: .bounds
-                        ) { [filter.id: $0] }
+                        cycle(filter)
+                    }
+                    .anchorPreference(
+                        key: CategoryFilterButtonBoundsKey.self,
+                        value: .bounds
+                    ) { [filter.id: $0] }
                 }
             }
             .padding(.vertical, 2)

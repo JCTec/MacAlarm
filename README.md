@@ -95,6 +95,32 @@ swift run -c debug macalarm-tests
 ./scripts/run-viewer-debug.sh
 ```
 
+### Run in Xcode
+
+`Package.swift` remains the single source of truth for all code. The Xcode
+project is generated from [`project.yml`](project.yml) with
+[XcodeGen](https://github.com/yonaskolb/XcodeGen) and is not committed:
+
+```sh
+brew install xcodegen        # one-time
+xcodegen generate            # (re)creates MacAlarm.xcodeproj
+open MacAlarm.xcodeproj       # select the "MacAlarm" scheme, then Cmd+R
+```
+
+> **Run the `MacAlarm` scheme, not `MacAlarmApp`.** Xcode auto-generates a scheme
+> for every SwiftPM product, including the raw `MacAlarmApp` executable. Running
+> that one launches the binary *unbundled* and crashes immediately at
+> `UNUserNotificationCenter.current()` with `bundleProxyForCurrentProcess is nil`.
+> The `MacAlarm` scheme (the app target) is the only one that launches the real
+> `.app` bundle.
+
+The `MacAlarm` scheme builds a real `MacAlarm.app` (bundle id
+`dev.jc.macalarm.debug`, app icon, no sandbox — matching the shipped app) and a
+build phase bundles the `macalarm-agent` and `macalarmctl` helpers into
+`Contents/Resources/bin`, so menu-bar, permission, and helper flows behave as in
+a packaged build. Re-run `xcodegen generate` after adding or removing source
+files.
+
 Full local gate:
 
 ```sh
@@ -217,4 +243,4 @@ Before opening a pull request, read [Contributing](CONTRIBUTING.md) and [Securit
 
 ## License
 
-Public license selection is still pending. Add a `LICENSE` file before announcing the repository as open source.
+MacAlarm is released under the [MIT License](LICENSE).

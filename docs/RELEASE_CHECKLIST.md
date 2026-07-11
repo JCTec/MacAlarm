@@ -4,7 +4,7 @@ This checklist is for maintainers preparing MacAlarm for a public release.
 
 ## Repository Readiness
 
-- [ ] Add a public `LICENSE` file.
+- [x] Add a public `LICENSE` file (MIT).
 - [ ] Confirm `README.md` describes the product, limits, install path, data locations, and safety boundaries.
 - [ ] Confirm `SECURITY.md` has a private reporting path or a clear fallback process.
 - [ ] Confirm issue templates and pull request template do not invite private logs or secrets.

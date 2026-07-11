@@ -33,6 +33,7 @@ Status: current.
 - Manual QA checklist for supported macOS versions.
 - CI on current and previous macOS major releases.
 - Documentation for lock/unlock verification per macOS version.
+- Evaluate migrating the custom test runner to Swift Testing once contributor toolchains make it the lower-friction option; the custom runner remains intentional for minimal Command Line Tools environments.
 
 ## Phase 3: Advanced Security
 

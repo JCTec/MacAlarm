@@ -127,7 +127,8 @@ final class TelegramSettingsStore: ObservableObject {
         saveTask = Task { [weak self] in
             do {
                 try await MacAlarmBackgroundTask.throwing(priority: .utility) {
-                    try FileSecretStore.installedStore(for: config).deleteSecret(account: config.telegram.botTokenAccount)
+                    try FileSecretStore.installedStore(for: config).deleteSecret(
+                        account: config.telegram.botTokenAccount)
                 }
                 guard !Task.isCancelled else { return }
                 self?.tokenInput = ""
@@ -203,8 +204,9 @@ final class TelegramSettingsStore: ObservableObject {
                 guard let chatID = config.telegram.approvedChatIDs.first else {
                     throw MacAlarmError.invalidConfiguration("Approve at least one Telegram chat first.")
                 }
-                guard let tokenData = try FileSecretStore.installedStore(for: config)
-                    .readSecret(account: config.telegram.botTokenAccount),
+                guard
+                    let tokenData = try FileSecretStore.installedStore(for: config)
+                        .readSecret(account: config.telegram.botTokenAccount),
                     let token = String(data: tokenData, encoding: .utf8)?
                         .trimmingCharacters(in: .whitespacesAndNewlines),
                     !token.isEmpty

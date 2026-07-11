@@ -25,20 +25,24 @@ public actor EventPipeline {
     private let ruleEngine: RuleEngine
     private let dispatcher: AlarmDispatcher
     private let checkpointSink: any RemoteCheckpointSink
+    private let anchorSink: any LedgerHashAnchorSink
     private var heartbeatCount = 0
+    private var hasReportedAnchorFailure = false
 
     public init(
         config: MacAlarmConfig,
         ledger: HashChainLedger,
         ruleEngine: RuleEngine,
         dispatcher: AlarmDispatcher,
-        checkpointSink: any RemoteCheckpointSink
+        checkpointSink: any RemoteCheckpointSink,
+        anchorSink: any LedgerHashAnchorSink = DisabledLedgerHashAnchorSink()
     ) {
         self.config = config
         self.ledger = ledger
         self.ruleEngine = ruleEngine
         self.dispatcher = dispatcher
         self.checkpointSink = checkpointSink
+        self.anchorSink = anchorSink
     }
 
     @discardableResult
@@ -72,6 +76,9 @@ public actor EventPipeline {
                 if shouldCheckpointHeartbeat() {
                     try await enqueueCheckpoint(reason: "heartbeat")
                 }
+                if shouldAnchorHeartbeat() {
+                    await writeAnchorReportingFailure(reason: "heartbeat")
+                }
             }
 
             return EventProcessingResult(record: record, alarms: alarms, deliveries: deliveries)
@@ -95,6 +102,41 @@ public actor EventPipeline {
         try await checkpointSink.enqueue(checkpoint)
     }
 
+    public func writeAnchor(reason: String) async throws {
+        let verification = try await ledger.verify()
+        let anchor = LedgerHashAnchor(
+            deviceID: config.identity.deviceID,
+            ledgerPath: PathResolver.expandedPath(config.storage.ledgerPath),
+            recordCount: verification.recordCount,
+            lastHash: verification.lastHash,
+            isLedgerValid: verification.isValid,
+            reason: reason
+        )
+        try await anchorSink.write(anchor)
+    }
+
+    public func writeAnchorReportingFailure(reason: String) async {
+        do {
+            try await writeAnchor(reason: reason)
+        } catch {
+            guard !hasReportedAnchorFailure else {
+                return
+            }
+            hasReportedAnchorFailure = true
+            _ = try? await ledger.append(
+                AlarmEvent(
+                    source: "anchor",
+                    name: "anchor.write.failed",
+                    severity: .warning,
+                    metadata: [
+                        "reason": reason,
+                        "error": String(describing: error),
+                    ]
+                )
+            )
+        }
+    }
+
     public func verifyLedger() async throws -> LedgerVerification {
         try await ledger.verify()
     }
@@ -105,5 +147,13 @@ public actor EventPipeline {
         }
 
         return heartbeatCount % config.heartbeat.checkpointEveryHeartbeats == 0
+    }
+
+    private func shouldAnchorHeartbeat() -> Bool {
+        guard config.hashAnchor.enabled, config.hashAnchor.anchorEveryHeartbeats > 0 else {
+            return false
+        }
+
+        return heartbeatCount % config.hashAnchor.anchorEveryHeartbeats == 0
     }
 }

@@ -9,6 +9,7 @@ extension MacAlarmTests {
             let ledgerURL = directory.appendingPathComponent("events.jsonl")
             let outboxURL = directory.appendingPathComponent("outbox", isDirectory: true)
             let runtimeURL = directory.appendingPathComponent("runtime", isDirectory: true)
+            let anchorURL = directory.appendingPathComponent("anchors", isDirectory: true)
             let config = MacAlarmConfig(
                 storage: StorageConfig(
                     ledgerPath: ledgerURL.path,
@@ -22,6 +23,8 @@ extension MacAlarmTests {
                 notifications: NotificationConfig(console: false, localNotification: false),
                 remoteCheckpoint: RemoteCheckpointConfig(
                     enabled: true, endpointURL: "https://example.invalid/checkpoints", outboxOnly: true),
+                hashAnchor: HashAnchorConfig(
+                    enabled: true, directory: anchorURL.path, anchorEveryHeartbeats: 1),
                 rules: []
             )
             let runtime = try await MainActor.run {
@@ -36,6 +39,13 @@ extension MacAlarmTests {
             let outboxFiles = try FileManager.default.contentsOfDirectory(
                 at: outboxURL, includingPropertiesForKeys: nil)
             try expect(!outboxFiles.isEmpty, "agent should enqueue checkpoints")
+
+            let anchor = try require(
+                FileLedgerHashAnchorSink.readLatest(directory: anchorURL),
+                "agent should write a ledger hash anchor"
+            )
+            try expect(anchor.lastHash == verification.lastHash, "anchor should track the chain head")
+            try expect(anchor.recordCount == verification.recordCount, "anchor should track the record count")
 
             let statusURL = runtimeURL.appendingPathComponent("status.json")
             let status = try AgentStatusStore.load(from: statusURL)

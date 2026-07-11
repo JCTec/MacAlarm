@@ -72,9 +72,12 @@ struct LedgerIntegritySummaryGrid: View {
                 .frame(width: 18)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(isMissingKey ? "Ledger verification is waiting for recorder setup." : "Ledger verification is unavailable.")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.primary)
+                Text(
+                    isMissingKey
+                        ? "Ledger verification is waiting for recorder setup." : "Ledger verification is unavailable."
+                )
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.primary)
                 Text(
                     isMissingKey
                         ? "Install or start the recorder so MacAlarm can create the private HMAC key. No manual key management is needed."

@@ -45,7 +45,8 @@ extension MacAlarmApplicationDelegate {
                 if !target.openInFinder() {
                     showInfo(
                         title: "Proof Bundle Exported",
-                        message: "MacAlarm wrote the proof bundle, but Finder did not open it.\n\nDestination: \(bundle.proofDirectoryPath)"
+                        message:
+                            "MacAlarm wrote the proof bundle, but Finder did not open it.\n\nDestination: \(bundle.proofDirectoryPath)"
                     )
                 }
             } catch {

@@ -1,0 +1,72 @@
+name: MacAlarm
+
+# Generated Xcode project spec (XcodeGen). The SwiftPM package (Package.swift) is
+# the single source of truth for all code; this only defines the macOS .app shell
+# that links the MacAlarmAppSupport library so you can build + run in Xcode.
+#
+#   brew install xcodegen        # one-time
+#   xcodegen generate            # (re)creates MacAlarm.xcodeproj
+#   open MacAlarm.xcodeproj      # select the "MacAlarm" scheme, then Cmd+R
+
+options:
+  bundleIdPrefix: dev.jc
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+
+packages:
+  MacAlarm:
+    path: .
+
+targets:
+  MacAlarm:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Sources/MacAlarmApp
+      - path: DesignAssets/AppIcon/MacAlarm.icns
+        buildPhase: resources
+    dependencies:
+      - package: MacAlarm
+        product: MacAlarmAppSupport
+    settings:
+      base:
+        PRODUCT_NAME: MacAlarm
+        PRODUCT_BUNDLE_IDENTIFIER: dev.jc.macalarm.debug
+        INFOPLIST_FILE: Xcode/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        # This app monitors the system / reads the unified log, so it must NOT be
+        # sandboxed and ships no custom entitlements (matches package-release.sh).
+        ENABLE_APP_SANDBOX: NO
+        ENABLE_HARDENED_RUNTIME: NO
+        # Ad-hoc sign for local runs, mirroring the release default (--sign -).
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_REQUIRED: YES
+        CODE_SIGNING_ALLOWED: YES
+    postCompileScripts:
+      - name: Bundle helper executables (macalarm-agent, macalarmctl)
+        script: '"$SRCROOT/scripts/xcode-copy-helpers.sh"'
+        basedOnDependencyAnalysis: false
+
+# Canonical scheme. Run THIS ("MacAlarm") — it launches the MacAlarm.app bundle.
+# Do NOT run the auto-generated "MacAlarmApp" scheme: that is the raw SwiftPM
+# executable and launches unbundled, which crashes at UNUserNotificationCenter
+# .current() with "bundleProxyForCurrentProcess is nil".
+schemes:
+  MacAlarm:
+    build:
+      targets:
+        MacAlarm: all
+    run:
+      config: Debug
+    profile:
+      config: Release
+    archive:
+      config: Release

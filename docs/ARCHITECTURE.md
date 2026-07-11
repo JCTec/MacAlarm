@@ -11,6 +11,7 @@ Sources/
     AlarmEvent.swift
     AgentStatus.swift
     HashChainLedger.swift
+    LedgerHashAnchor.swift
     RuleEngine.swift
     SessionEventSource.swift
     FileEventSource.swift
@@ -64,6 +65,10 @@ Sources/
 `AlarmEvent` is the normalized event contract. Collectors should map native macOS data into this model and avoid leaking framework-specific objects into the rest of the system.
 
 `HashChainLedger` is an actor because multiple collectors may append concurrently. It writes JSONL records and signs each record with HMAC-SHA256 over the previous hash plus the event payload. File IO is queued through utility-priority tasks inside the actor so appends stay linear without pinning a cooperative executor thread during disk reads, parsing, locking, or writes. The ledger also uses advisory file locks: appends take an exclusive lock, while verification, proof export, and the live timeline loader take shared locks before reading bytes so another process cannot expose a partial append to readers.
+
+The ledger supports opt-in segment rotation through `storage.maxLedgerFileBytes` (nil, the default, disables it). When the active file reaches the limit, an append renames it to a timestamped `events-rotated-*.jsonl` sibling and seeds the fresh active file with a `ledger.rotated` record whose `previousHash` is the archived segment's chain head, so the chain stays continuous across files. `verify()` and `readAllRecords()` walk archived segments in name order before the active file; `readRecords()` intentionally reads only the active segment because the live timeline shows recent history.
+
+`LedgerHashAnchor` preserves the chain head outside the ledger's own trust domain. `FileLedgerHashAnchorSink` writes `anchor-latest.json` plus an append-only `anchor-history.jsonl` into `hashAnchor.directory` (an iCloud Drive folder by default so anchors sync off the Mac), and `LedgerAnchorComparison` reports truncation or rewrites against an anchor. The pipeline writes anchors on agent start/stop and on a heartbeat cadence; anchor failures record a single warning event instead of blocking collection.
 
 `RuleEngine` is an actor because cooldown and threshold windows are mutable state. Rules are intentionally data-oriented so they can later be loaded from a signed config file.
 
