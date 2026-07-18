@@ -5,12 +5,12 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 VERSION="${MACALARM_VERSION:-0.1.0}"
-LOGIN_ITEM_BUNDLE_ID="${MACALARM_LOGIN_ITEM_BUNDLE_ID:-dev.jc.macalarm.recorder}"
+LOGIN_ITEM_BUNDLE_ID="${MACALARM_LOGIN_ITEM_BUNDLE_ID:-com.jctec.macalarm.recorder}"
 DIST_DIR="$ROOT_DIR/dist"
 APP_DIR="$DIST_DIR/MacAlarm.app"
 CHECKSUM_FILE="$DIST_DIR/MacAlarm-$VERSION.zip.sha256"
 ZIP_PATH="$DIST_DIR/MacAlarm-$VERSION.zip"
-AGENT_PLIST="$APP_DIR/Contents/Library/LaunchAgents/dev.jc.macalarm.agent.plist"
+AGENT_PLIST="$APP_DIR/Contents/Library/LaunchAgents/com.jctec.macalarm.agent.plist"
 LOGIN_ITEM_APP="$APP_DIR/Contents/Library/LoginItems/MacAlarm Recorder.app"
 LOGIN_ITEM_INFO="$LOGIN_ITEM_APP/Contents/Info.plist"
 LOGIN_ITEM_EXECUTABLE="$LOGIN_ITEM_APP/Contents/MacOS/MacAlarm"
@@ -148,7 +148,7 @@ fi
 plutil -lint "$AGENT_PLIST" >/dev/null
 agent_label="$(plutil -extract Label raw -o - "$AGENT_PLIST")"
 agent_program="$(plutil -extract BundleProgram raw -o - "$AGENT_PLIST")"
-if [[ "$agent_label" != "dev.jc.macalarm.agent" ]]; then
+if [[ "$agent_label" != "com.jctec.macalarm.agent" ]]; then
   echo "Unexpected bundled LaunchAgent label: $agent_label" >&2
   exit 1
 fi

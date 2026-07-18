@@ -31,7 +31,7 @@ public final class FileEventSource {
     private var descriptor: CInt = -1
     private var source: DispatchSourceFileSystemObject?
 
-    public init(path: String, queue: DispatchQueue = DispatchQueue(label: "dev.jc.macalarm.file-events")) {
+    public init(path: String, queue: DispatchQueue = DispatchQueue(label: "com.jctec.macalarm.file-events")) {
         self.path = path
         self.queue = queue
     }

@@ -12,7 +12,7 @@ Diagnostic logs answer "what did the code do"; the ledger answers "what happened
 
 ## The Self-Ingestion Trap
 
-The default `unifiedLog` config polls predicate `subsystem == 'dev.jc.macalarm.custom'`. All diagnostic logging MUST use subsystem `dev.jc.macalarm.diagnostics` so the agent never records its own debug output into the ledger. Add a comment on the subsystem constant explaining this. `macalarm-probe` currently logs under `dev.jc.macalarm` — leave it; it is exact-match safe too.
+The default `unifiedLog` config polls predicate `subsystem == 'dev.jc.macalarm.custom'`. All diagnostic logging MUST use subsystem `dev.jc.macalarm.diagnostics` so the agent never records its own debug output into the ledger. Add a comment on the subsystem constant explaining this. `macalarm-probe` currently logs under `com.jctec.macalarm` — leave it; it is exact-match safe too.
 
 ## Phase 0 — Foundation (do first, everything depends on it)
 

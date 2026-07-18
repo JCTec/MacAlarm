@@ -69,8 +69,9 @@ struct MacAlarmAgentInstaller: Sendable {
                 // cannot do; failing early gives an actionable error instead.
                 MacAlarmLog.installer.error(
                     """
-                    SMAppService unavailable in sandboxed build (\(reason, privacy: .public)); \
-                    legacy LaunchAgent fallback is not possible under App Sandbox
+                    Legacy LaunchAgent install \
+                    \(SandboxEnvironment.unavailableReason("writes into ~/Library outside the container"), privacy: .public); \
+                    SMAppService was unavailable (\(reason, privacy: .public))
                     """)
                 throw AppInstallerError.sandboxRequiresBundledRecorder(reason)
             }
@@ -263,8 +264,10 @@ struct MacAlarmAgentInstaller: Sendable {
         }
     }
 
+    /// Forwards to the shared `SandboxEnvironment.isSandboxed` so all sandbox
+    /// detection has one implementation and one test seam.
     static var isSandboxed: Bool {
-        ProcessInfo.processInfo.environment["APP_SANDBOX_CONTAINER_ID"] != nil
+        SandboxEnvironment.isSandboxed
     }
 
     private static func signAndRegisterAgentBundleIfPossible(paths: MacAlarmInstallationPaths) throws {
@@ -286,7 +289,11 @@ struct MacAlarmAgentInstaller: Sendable {
                 // lsregister cannot scan paths inside the app's sandbox container
                 // (fails with -10819); the sandboxed recorder path is SMAppService.
                 MacAlarmLog.installer.notice(
-                    "Sandboxed build; skipping LaunchServices registration of the helper app")
+                    """
+                    LaunchServices registration of the helper app \
+                    \(SandboxEnvironment.unavailableReason("lsregister cannot scan the container"), privacy: .public); \
+                    skipping
+                    """)
                 return
             }
 
@@ -328,8 +335,10 @@ enum AppInstallerError: LocalizedError {
             "Could not sign the MacAlarm helper app: \(message)"
         case .sandboxRequiresBundledRecorder(let reason):
             """
-            This sandboxed build can only install the recorder through the bundled \
-            login item (SMAppService), which was unavailable: \(reason) \
+            Legacy LaunchAgent install is \
+            \(SandboxEnvironment.unavailableReason("it writes into ~/Library outside the container")). \
+            This sandboxed build installs the recorder only through the bundled login item \
+            (SMAppService), which was unavailable: \(reason) \
             Run the packaged MacAlarm.app (with Contents/Library/LoginItems), or \
             disable App Sandbox for development runs.
             """

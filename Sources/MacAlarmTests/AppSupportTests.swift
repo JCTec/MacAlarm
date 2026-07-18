@@ -183,16 +183,16 @@ extension MacAlarmTests {
 
         await runner.run("agent status message formats loaded and unloaded states") {
             let loaded = AgentStatusMessage(
-                service: "gui/501/dev.jc.macalarm.agent",
-                plistPath: "/Users/test/Library/LaunchAgents/dev.jc.macalarm.agent.plist",
+                service: "gui/501/com.jctec.macalarm.agent",
+                plistPath: "/Users/test/Library/LaunchAgents/com.jctec.macalarm.agent.plist",
                 isLoaded: true,
                 state: "running",
                 processID: 123,
                 detail: "unused"
             )
             let unloaded = AgentStatusMessage(
-                service: "gui/501/dev.jc.macalarm.agent",
-                plistPath: "/Users/test/Library/LaunchAgents/dev.jc.macalarm.agent.plist",
+                service: "gui/501/com.jctec.macalarm.agent",
+                plistPath: "/Users/test/Library/LaunchAgents/com.jctec.macalarm.agent.plist",
                 isLoaded: false,
                 state: nil,
                 processID: nil,
@@ -216,8 +216,8 @@ extension MacAlarmTests {
             )
 
             let serviceManaged = AgentStatusMessage(
-                service: "gui/501/dev.jc.macalarm.agent",
-                plistPath: "/Users/test/Library/LaunchAgents/dev.jc.macalarm.agent.plist",
+                service: "gui/501/com.jctec.macalarm.agent",
+                plistPath: "/Users/test/Library/LaunchAgents/com.jctec.macalarm.agent.plist",
                 isLoaded: true,
                 state: "running",
                 processID: 456,
@@ -239,8 +239,8 @@ extension MacAlarmTests {
             )
 
             let requiresApproval = AgentStatusMessage(
-                service: "gui/501/dev.jc.macalarm.agent",
-                plistPath: "/Users/test/Library/LaunchAgents/dev.jc.macalarm.agent.plist",
+                service: "gui/501/com.jctec.macalarm.agent",
+                plistPath: "/Users/test/Library/LaunchAgents/com.jctec.macalarm.agent.plist",
                 isLoaded: false,
                 state: nil,
                 processID: nil,
@@ -257,8 +257,8 @@ extension MacAlarmTests {
             )
 
             let registeredWaiting = AgentStatusMessage(
-                service: "gui/501/dev.jc.macalarm.agent",
-                plistPath: "/Users/test/Library/LaunchAgents/dev.jc.macalarm.agent.plist",
+                service: "gui/501/com.jctec.macalarm.agent",
+                plistPath: "/Users/test/Library/LaunchAgents/com.jctec.macalarm.agent.plist",
                 isLoaded: false,
                 state: nil,
                 processID: nil,
@@ -453,7 +453,7 @@ extension MacAlarmTests {
             try Data("icon-v1".utf8).write(to: sourceIcon)
 
             let paths = MacAlarmInstallationPaths(
-                label: "dev.jc.macalarm.tests.\(UUID().uuidString)",
+                label: "com.jctec.macalarm.tests.\(UUID().uuidString)",
                 homeDirectory: homeDirectory,
                 userID: 501
             )

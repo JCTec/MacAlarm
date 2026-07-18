@@ -15,7 +15,7 @@ The recorder must not depend on the app window being open.
   - `macalarm-agent`
   - `macalarmctl`
 - App bundle includes `Contents/Library/LoginItems/MacAlarm Recorder.app`, a background-only helper app with the MacAlarm name and icon, so the packaged app can register the recorder through `SMAppService.loginItem`.
-- App bundle also includes `Contents/Library/LaunchAgents/dev.jc.macalarm.agent.plist` as the app-bundled `SMAppService.agent` fallback path.
+- App bundle also includes `Contents/Library/LaunchAgents/com.jctec.macalarm.agent.plist` as the app-bundled `SMAppService.agent` fallback path.
 - Installed helper fallback layout uses `~/Library/Application Support/MacAlarm/MacAlarm.app/Contents/MacOS/MacAlarm`. The installer signs the completed helper app after writing `Info.plist` and `MacAlarm.icns`, so legacy fallback installs still bind a MacAlarm identity to the background item where macOS supports it.
 - The native app-bundled launch path redirects stdout/stderr into `~/Library/Logs/MacAlarm` from inside the agent because bundled login items and app-bundled `SMAppService` plists cannot contain per-user absolute log paths at build time.
 - App menu includes Agent actions:
@@ -133,13 +133,13 @@ MacAlarm.app/Contents/Library/LoginItems/MacAlarm Recorder.app
 The app-bundled LaunchAgent remains as a fallback:
 
 ```text
-MacAlarm.app/Contents/Library/LaunchAgents/dev.jc.macalarm.agent.plist
+MacAlarm.app/Contents/Library/LaunchAgents/com.jctec.macalarm.agent.plist
 ```
 
 Development and CLI fallback installs may write:
 
 ```text
-~/Library/LaunchAgents/dev.jc.macalarm.agent.plist
+~/Library/LaunchAgents/com.jctec.macalarm.agent.plist
 ```
 
 macOS may still ask normal user-facing permissions depending on notification delivery behavior. MacAlarm should always ask through visible system prompts or explicit app dialogs. It must not bypass TCC or hide persistence.
@@ -179,7 +179,7 @@ Those require a later privileged LaunchDaemon or helper, and that should be desi
 - Confirm the release gate smoke-tested packaged helper binaries and `macalarmctl`
 - Open the DMG, drag `MacAlarm.app` to Applications, then open it from Applications
 - Install the recorder from the in-app setup banner or `Recorder > Install Recorder at Login...`
-- Verify `launchctl print "gui/$(id -u)/dev.jc.macalarm.agent"`
+- Verify `launchctl print "gui/$(id -u)/com.jctec.macalarm.agent"`
 - Lock and unlock the Mac
 - Confirm event appears in timeline
 - Confirm ledger verifies

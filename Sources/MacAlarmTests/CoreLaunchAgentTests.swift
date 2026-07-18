@@ -21,7 +21,7 @@ extension MacAlarmTests {
                 plist.contains("<key>AssociatedBundleIdentifiers</key>"),
                 "plist should associate the background item with the app bundle"
             )
-            try expect(plist.contains("dev.jc.macalarm"), "plist should include app bundle identifier")
+            try expect(plist.contains("com.jctec.macalarm"), "plist should include app bundle identifier")
         }
 
         await runner.run("launch agent manager builds stable lifecycle commands") {

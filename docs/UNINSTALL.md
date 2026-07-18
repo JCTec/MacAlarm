@@ -20,7 +20,7 @@ A normal per-user install may create:
 
 ~/Library/Logs/MacAlarm/
 
-~/Library/LaunchAgents/dev.jc.macalarm.agent.plist
+~/Library/LaunchAgents/com.jctec.macalarm.agent.plist
 
 ~/Library/Mobile Documents/com~apple~CloudDocs/MacAlarm/
   anchor-latest.json
@@ -75,9 +75,9 @@ rm -rf \
   "$HOME/Applications/MacAlarm.app" \
   "$HOME/Library/Application Support/MacAlarm" \
   "$HOME/Library/Logs/MacAlarm" \
-  "$HOME/Library/LaunchAgents/dev.jc.macalarm.agent.plist" \
-  "$HOME/Library/LaunchAgents/dev.jc.macalarm.recorder.plist" \
-  "$HOME/Library/LaunchAgents/dev.jc.macalarm.plist"
+  "$HOME/Library/LaunchAgents/com.jctec.macalarm.agent.plist" \
+  "$HOME/Library/LaunchAgents/com.jctec.macalarm.recorder.plist" \
+  "$HOME/Library/LaunchAgents/com.jctec.macalarm.plist"
 ```
 
 Optional development cleanup:
@@ -86,12 +86,12 @@ Optional development cleanup:
 find "$HOME/Library/Preferences" -maxdepth 1 -type f \( \
   -name 'MacAlarm*.plist' -o \
   -name 'macalarm*.plist' -o \
-  -name 'dev.jc.macalarm*.plist' \
+  -name 'com.jctec.macalarm*.plist' \
 \) -delete
 
 find /private/tmp /var/tmp "${TMPDIR:-/tmp}" -maxdepth 5 \( \
   -iname '*macalarm*' -o \
-  -iname '*dev.jc.macalarm*' \
+  -iname '*com.jctec.macalarm*' \
 \) -exec rm -rf {} +
 ```
 
@@ -103,7 +103,7 @@ Do not run broad system cleanup commands from project scripts. Keep uninstall be
 pgrep -afil 'MacAlarm|macalarm' || true
 
 uid="$(id -u)"
-for label in dev.jc.macalarm.agent dev.jc.macalarm.recorder dev.jc.macalarm; do
+for label in com.jctec.macalarm.agent com.jctec.macalarm.recorder com.jctec.macalarm; do
   launchctl print "gui/$uid/$label" >/dev/null 2>&1 && echo "loaded $label" || echo "not loaded $label"
 done
 
@@ -112,7 +112,7 @@ find "$HOME" \( \
   -path "$HOME/Dev/Logging System/*" \
 \) -prune -o \( \
   -iname '*macalarm*' -o \
-  -iname '*dev.jc.macalarm*' \
+  -iname '*com.jctec.macalarm*' \
 \) -print 2>/dev/null
 ```
 
@@ -126,7 +126,7 @@ This kind of stale row does not mean the recorder is running. Trust these checks
 
 ```sh
 pgrep -afil 'MacAlarm|macalarm' || true
-launchctl print "gui/$(id -u)/dev.jc.macalarm.agent"
+launchctl print "gui/$(id -u)/com.jctec.macalarm.agent"
 ```
 
 If the service is not found and no process is running, the recorder is gone.

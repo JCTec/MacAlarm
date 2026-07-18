@@ -24,7 +24,7 @@ final class MacAlarmApplicationDelegate: NSObject, NSApplicationDelegate, NSWind
     var inspectorAutoOpenMenuItem: NSMenuItem?
     var inspectorSummaryHeaderMenuItem: NSMenuItem?
 
-    let launchAgentLabel = "dev.jc.macalarm.agent"
+    let launchAgentLabel = "com.jctec.macalarm.agent"
 
     var agentInstaller: MacAlarmAgentInstaller {
         MacAlarmAgentInstaller(launchAgentLabel: launchAgentLabel)

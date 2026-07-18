@@ -92,7 +92,7 @@ Keep the rest of the generated config fields intact. After editing:
 ```sh
 "$HOME/Library/Application Support/MacAlarm/bin/macalarmctl" validate-config \
   --config "$HOME/Library/Application Support/MacAlarm/config.json"
-launchctl kickstart -k "gui/$(id -u)/dev.jc.macalarm.agent"
+launchctl kickstart -k "gui/$(id -u)/com.jctec.macalarm.agent"
 ```
 
 ## Alert On Custom Events

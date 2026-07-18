@@ -2,6 +2,7 @@ import Foundation
 
 extension MacAlarmTests {
     static func runCoreTests(_ runner: TestRunner) async {
+        await runSandboxEnvironmentTests(runner)
         await runCoreLedgerTests(runner)
         await runCoreRuleTests(runner)
         await runCoreConfigSecretTests(runner)

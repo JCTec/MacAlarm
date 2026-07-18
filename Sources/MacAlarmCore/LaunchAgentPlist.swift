@@ -11,14 +11,14 @@ public struct LaunchAgentPlist: Codable, Equatable, Sendable {
     public var associatedBundleIdentifiers: [String]
 
     public init(
-        label: String = "dev.jc.macalarm.agent",
+        label: String = "com.jctec.macalarm.agent",
         executablePath: String,
         configPath: String,
         standardOutPath: String = "~/Library/Logs/MacAlarm/agent.out.log",
         standardErrorPath: String = "~/Library/Logs/MacAlarm/agent.err.log",
         keepAlive: Bool = true,
         runAtLoad: Bool = true,
-        associatedBundleIdentifiers: [String] = ["dev.jc.macalarm"]
+        associatedBundleIdentifiers: [String] = ["com.jctec.macalarm"]
     ) {
         self.label = label
         self.executablePath = executablePath

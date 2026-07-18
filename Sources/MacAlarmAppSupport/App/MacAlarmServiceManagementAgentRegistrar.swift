@@ -35,9 +35,9 @@ enum ServiceManagementAgentStatus: Equatable, Sendable {
 }
 
 struct MacAlarmServiceManagementAgentRegistrar: Sendable {
-    static let bundledPlistName = "dev.jc.macalarm.agent.plist"
+    static let bundledPlistName = "com.jctec.macalarm.agent.plist"
     static let loginItemBundleName = "MacAlarm Recorder.app"
-    static let loginItemBundleIdentifier = "dev.jc.macalarm.recorder"
+    static let loginItemBundleIdentifier = "com.jctec.macalarm.recorder"
 
     var plistName: String = Self.bundledPlistName
     var loginItemBundleIdentifier: String = Self.loginItemBundleIdentifier
