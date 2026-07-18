@@ -51,6 +51,7 @@ public final class MacAlarmAgentRuntime {
         let deadline = duration.map { Date().addingTimeInterval($0) }
         while !Task.isCancelled {
             if let deadline, Date() >= deadline {
+                MacAlarmLog.agent.info("Bounded run reached its deadline; stopping")
                 break
             }
 
@@ -72,6 +73,15 @@ public final class MacAlarmAgentRuntime {
         )
 
         isRunning = true
+        MacAlarmLog.agent.info(
+            """
+            Agent starting: session=\(self.config.session.enabled, privacy: .public) \
+            heartbeat=\(self.config.heartbeat.enabled, privacy: .public) \
+            unifiedLog=\(self.config.unifiedLog.enabled, privacy: .public) \
+            telegram=\(self.config.telegram.enabled, privacy: .public) \
+            anchor=\(self.config.hashAnchor.enabled, privacy: .public) \
+            watchedPaths=\(self.config.filesystem.watchedPaths.count, privacy: .public)
+            """)
         await statusStore.markRunning()
         await recordAgentEvent(
             AlarmEvent(
@@ -86,6 +96,8 @@ public final class MacAlarmAgentRuntime {
             pipeline: pipeline,
             statusStore: statusStore
         )
+
+        await Self.registerLocalNotificationAuthorization(config)
 
         if config.session.enabled {
             startSessionEvents()
@@ -151,6 +163,7 @@ public final class MacAlarmAgentRuntime {
 
         isRunning = false
         await statusStore.markStopped()
+        MacAlarmLog.agent.info("Agent stopped")
     }
 
     public func verifyLedger() async throws -> LedgerVerification {
@@ -165,12 +178,18 @@ public final class MacAlarmAgentRuntime {
         }
         sessionEventSource = source
         source.start()
+        MacAlarmLog.sources.info("Session event source started")
     }
 
     private func startFileEvents() {
         for watchedPath in config.filesystem.watchedPaths {
             let expandedPath = PathResolver.expandedPath(watchedPath.path)
             guard FileManager.default.fileExists(atPath: expandedPath) else {
+                MacAlarmLog.sources.notice(
+                    """
+                    Watched path missing (\(watchedPath.label, privacy: .public), \
+                    required=\(watchedPath.required, privacy: .public)); skipping
+                    """)
                 if watchedPath.required {
                     Task { [pipeline, statusStore] in
                         await recordAgentEvent(
@@ -201,7 +220,13 @@ public final class MacAlarmAgentRuntime {
                     }
                 }
                 fileEventSources.append(source)
+                MacAlarmLog.sources.info("File watch started (\(watchedPath.label, privacy: .public))")
             } catch {
+                MacAlarmLog.sources.error(
+                    """
+                    File watch failed (\(watchedPath.label, privacy: .public)): \
+                    \(String(describing: error), privacy: .public)
+                    """)
                 Task { [pipeline, statusStore] in
                     await recordAgentEvent(
                         AlarmEvent(
@@ -223,6 +248,8 @@ public final class MacAlarmAgentRuntime {
     }
 
     private func startHeartbeat() {
+        MacAlarmLog.agent.info(
+            "Heartbeat started (interval \(self.config.heartbeat.intervalSeconds, privacy: .public)s)")
         heartbeatTask = Task { [pipeline, statusStore, interval = config.heartbeat.intervalSeconds] in
             while !Task.isCancelled {
                 await recordAgentEvent(
@@ -240,6 +267,11 @@ public final class MacAlarmAgentRuntime {
     }
 
     private func startUnifiedLogPolling() {
+        MacAlarmLog.sources.info(
+            """
+            Unified log polling started (\(self.config.unifiedLog.queries.count, privacy: .public) query(ies), \
+            every \(self.config.unifiedLog.pollIntervalSeconds, privacy: .public)s)
+            """)
         unifiedLogTask = Task { [pipeline, statusStore, config = config.unifiedLog] in
             let reader = UnifiedLogReader()
             var seenFingerprintsByQuery = [String: Set<String>]()
@@ -267,6 +299,11 @@ public final class MacAlarmAgentRuntime {
                             limit: max(template.limit * 4, 128)
                         )
                     } catch {
+                        MacAlarmLog.sources.error(
+                            """
+                            Unified log poll failed (\(template.name, privacy: .public)): \
+                            \(String(describing: error), privacy: .public)
+                            """)
                         await recordAgentEvent(
                             AlarmEvent(
                                 source: "unifiedLog",
@@ -297,6 +334,7 @@ public final class MacAlarmAgentRuntime {
                         .trimmingCharacters(in: .whitespacesAndNewlines),
                     !token.isEmpty
                 else {
+                    MacAlarmLog.telegram.notice("Polling requested but bot token is missing; polling disabled")
                     await recordAgentEvent(
                         AlarmEvent(source: "telegram", name: "token.missing", severity: .warning),
                         pipeline: pipeline,
@@ -304,6 +342,8 @@ public final class MacAlarmAgentRuntime {
                     )
                     return
                 }
+                MacAlarmLog.telegram.info(
+                    "Telegram polling started (every \(config.telegram.pollingIntervalSeconds, privacy: .public)s)")
 
                 let poller = TelegramCommandPoller(
                     client: TelegramClient(token: token),
@@ -314,6 +354,8 @@ public final class MacAlarmAgentRuntime {
                     do {
                         try await poller.pollOnce()
                     } catch {
+                        MacAlarmLog.telegram.error(
+                            "Poll failed: \(String(describing: error), privacy: .public)")
                         await recordAgentEvent(
                             AlarmEvent(
                                 source: "telegram",
@@ -364,6 +406,22 @@ public final class MacAlarmAgentRuntime {
         }
 
         return Set(fingerprints.suffix(limit))
+    }
+
+    /// Register local-notification authorization at startup so the recorder
+    /// appears in System Settings > Notifications, where the user can opt in.
+    /// Notifications stay optional: an unauthorized recorder simply keeps
+    /// delivering over its other channels.
+    private static func registerLocalNotificationAuthorization(_ config: MacAlarmConfig) async {
+        guard config.notifications.localNotification, NotificationEnvironment.canUseUserNotifications else {
+            return
+        }
+
+        let notifier = ResilientLocalNotifier(
+            soundEnabled: config.notifications.sound,
+            useAppleScriptFallback: config.notifications.appleScriptFallback
+        )
+        _ = await notifier.requestAuthorization()
     }
 
     private static func makeNotifiers(_ config: MacAlarmConfig) -> [any AlarmNotifier] {

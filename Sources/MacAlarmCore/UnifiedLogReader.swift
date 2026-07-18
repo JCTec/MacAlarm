@@ -47,6 +47,8 @@ public struct UnifiedLogReader: Sendable {
             }
         }
 
+        MacAlarmLog.sources.debug(
+            "Unified log query returned \(events.count, privacy: .public) event(s)")
         return events
     }
 

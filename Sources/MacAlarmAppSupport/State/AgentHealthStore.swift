@@ -64,6 +64,8 @@ final class AgentHealthStore: ObservableObject {
             self.snapshot = snapshot
             loadError = nil
         case .failure(let error):
+            MacAlarmLog.health.error(
+                "Agent status read failed: \(String(describing: error), privacy: .public)")
             snapshot = nil
             loadError = String(describing: error)
         }

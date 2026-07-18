@@ -2,6 +2,28 @@ import Foundation
 
 extension LaunchAgentManager {
     static func runProcess(executable: String, arguments: [String]) async -> LaunchAgentCommandResult {
+        let result = await Self.runProcessDetached(executable: executable, arguments: arguments)
+        let toolName = URL(fileURLWithPath: executable).lastPathComponent
+        if result.terminationStatus == 0 {
+            MacAlarmLog.launchAgent.debug(
+                """
+                \(toolName, privacy: .public) \(result.arguments.first ?? "", privacy: .public) \
+                exited 0
+                """)
+        } else {
+            MacAlarmLog.launchAgent.error(
+                """
+                \(toolName, privacy: .public) \(result.arguments.first ?? "", privacy: .public) \
+                exited \(result.terminationStatus, privacy: .public): \
+                \(String(result.standardError.prefix(200)), privacy: .public)
+                """)
+        }
+        return result
+    }
+
+    private static func runProcessDetached(
+        executable: String, arguments: [String]
+    ) async -> LaunchAgentCommandResult {
         await Task.detached(priority: .utility) {
             let process = Process()
             let outputPipe = Pipe()

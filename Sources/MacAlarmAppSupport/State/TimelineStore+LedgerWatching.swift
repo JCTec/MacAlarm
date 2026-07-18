@@ -1,6 +1,7 @@
 import Darwin
 import Dispatch
 import Foundation
+import MacAlarmCore
 
 extension TimelineStore {
     func startWatchingLedgerPath() {
@@ -21,8 +22,10 @@ extension TimelineStore {
 
             switch target {
             case .ledgerFile(let path):
+                MacAlarmLog.timeline.debug("Watching ledger file")
                 self?.startWatchingFile(at: path, eventMask: [.write, .extend, .rename, .delete])
             case .directory(let path):
+                MacAlarmLog.timeline.notice("Ledger missing; watching parent directory for it to appear")
                 self?.startWatchingFile(at: path, eventMask: [.write, .extend, .rename, .delete, .attrib])
             }
         }
@@ -31,6 +34,8 @@ extension TimelineStore {
     private func startWatchingFile(at path: String, eventMask: DispatchSource.FileSystemEvent) {
         let descriptor = open(path, O_EVTONLY)
         guard descriptor >= 0 else {
+            MacAlarmLog.timeline.error(
+                "Failed to open watch target (errno \(errno, privacy: .public))")
             return
         }
         fileDescriptor = descriptor
@@ -61,6 +66,7 @@ extension TimelineStore {
         reload()
 
         if shouldReattach {
+            MacAlarmLog.timeline.notice("Ledger watch reattaching (rename/delete or directory event)")
             stopWatchingLedger()
             startWatchingLedgerPath()
         }

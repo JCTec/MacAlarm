@@ -75,6 +75,12 @@ public actor LocalNotificationNotifier: AlarmNotifier {
         )
     }
 
+    /// Explicitly ask macOS for notification permission. Registers this app in
+    /// System Settings > Notifications so the user can opt in.
+    public func requestAuthorization() async throws -> Bool {
+        try await notificationCenter.requestAuthorization(options: [.alert, .sound])
+    }
+
     public func send(_ alarm: Alarm) async throws -> NotificationDelivery {
         let granted = try await notificationCenter.requestAuthorization(options: [.alert, .sound])
         guard granted else {
@@ -147,6 +153,13 @@ public struct AppleScriptNotificationNotifier: AlarmNotifier {
     }
 }
 
+/// Outcome of a user-initiated request to enable local notifications.
+public enum LocalNotificationAuthorization: Equatable, Sendable {
+    case granted
+    case denied
+    case unavailable(String)
+}
+
 public actor ResilientLocalNotifier: AlarmNotifier {
     public nonisolated let channel = "local-notification"
     private let primary: LocalNotificationNotifier?
@@ -158,6 +171,21 @@ public actor ResilientLocalNotifier: AlarmNotifier {
             ? LocalNotificationNotifier(soundEnabled: soundEnabled)
             : nil
         self.fallback = useAppleScriptFallback ? AppleScriptNotificationNotifier(soundEnabled: soundEnabled) : nil
+    }
+
+    /// Ask macOS to authorize local notifications for this process. Only the
+    /// user-facing notification path (UNUserNotifications) supports opt-in; when
+    /// this process is not a bundled app the request is unavailable.
+    public func requestAuthorization() async -> LocalNotificationAuthorization {
+        guard let primary else {
+            return .unavailable("Local notifications require the packaged MacAlarm app bundle.")
+        }
+
+        do {
+            return try await primary.requestAuthorization() ? .granted : .denied
+        } catch {
+            return .unavailable(error.localizedDescription)
+        }
     }
 
     public func authorizationSnapshot() async -> NotificationAuthorizationSnapshot {
@@ -235,6 +263,16 @@ public actor AlarmDispatcher {
 
             var deliveries = [NotificationDelivery]()
             for await delivery in group {
+                if delivery.succeeded {
+                    MacAlarmLog.notify.debug(
+                        "Delivery succeeded via \(delivery.channel, privacy: .public)")
+                } else {
+                    MacAlarmLog.notify.error(
+                        """
+                        Delivery failed via \(delivery.channel, privacy: .public): \
+                        \(delivery.detail, privacy: .public)
+                        """)
+                }
                 deliveries.append(delivery)
             }
             return deliveries.sorted { $0.channel < $1.channel }

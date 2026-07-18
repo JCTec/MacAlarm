@@ -26,7 +26,14 @@ struct MacAlarmAgentCommand {
 
             let config = try Self.loadConfig(path: arguments.configPath)
             let validation = ConfigValidator.validate(config)
+            MacAlarmLog.agent.info(
+                """
+                Config loaded (explicit=\(arguments.configPath != nil, privacy: .public), \
+                valid=\(validation.isValid, privacy: .public), \
+                issues=\(validation.issues.count, privacy: .public))
+                """)
             guard validation.isValid else {
+                MacAlarmLog.agent.error("Config validation failed; exiting")
                 printJSON(validation)
                 Foundation.exit(2)
             }
@@ -35,16 +42,23 @@ struct MacAlarmAgentCommand {
                 for: config,
                 secretStore: FileSecretStore.installedStore(for: config)
             )
+            MacAlarmLog.agent.debug("HMAC key loaded (\(hmacKey.count, privacy: .public) bytes)")
             let runtime = try MacAlarmAgentRuntime(config: config, hmacKey: hmacKey)
 
             if arguments.verifyLedger {
                 let verification = try await runtime.verifyLedger()
+                MacAlarmLog.ledger.info(
+                    """
+                    Verify-ledger requested: valid=\(verification.isValid, privacy: .public), \
+                    records=\(verification.recordCount, privacy: .public)
+                    """)
                 printJSON(verification)
                 Foundation.exit(verification.isValid ? 0 : 3)
             }
 
             try await runtime.run(duration: arguments.duration)
         } catch {
+            MacAlarmLog.agent.error("Agent exiting on error: \(String(describing: error), privacy: .public)")
             fputs("macalarm-agent error: \(error)\n", stderr)
             Foundation.exit(1)
         }

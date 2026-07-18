@@ -98,6 +98,11 @@ public struct LedgerProofExporter {
         )
 
         try write(bundle: bundle, ledgerData: ledgerData, to: destinationURL)
+        MacAlarmLog.ledger.info(
+            """
+            Proof bundle exported: \(verification.recordCount, privacy: .public) record(s), \
+            valid=\(verification.isValid, privacy: .public)
+            """)
         return bundle
     }
 

@@ -60,7 +60,10 @@ public final class FileEventSource {
         )
 
         dispatchSource.setEventHandler { [path] in
-            handler(FileEvent(path: path, flags: dispatchSource.data.flagNames))
+            let flags = dispatchSource.data.flagNames
+            MacAlarmLog.sources.debug(
+                "File event delivered (\(flags.joined(separator: ","), privacy: .public))")
+            handler(FileEvent(path: path, flags: flags))
         }
 
         dispatchSource.setCancelHandler { [openedDescriptor] in
@@ -72,6 +75,9 @@ public final class FileEventSource {
     }
 
     public func stop() {
+        if source != nil {
+            MacAlarmLog.sources.debug("File watch stopped")
+        }
         source?.cancel()
         source = nil
         descriptor = -1

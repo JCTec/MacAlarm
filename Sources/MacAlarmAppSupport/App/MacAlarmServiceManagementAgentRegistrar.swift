@@ -1,4 +1,5 @@
 import Foundation
+import MacAlarmCore
 
 #if canImport(ServiceManagement)
     import ServiceManagement
@@ -48,13 +49,17 @@ struct MacAlarmServiceManagementAgentRegistrar: Sendable {
         #if canImport(ServiceManagement)
             return try await MacAlarmBackgroundTask.throwing(priority: .utility) {
                 if Self.bundledLoginItemExists(identifier: loginItemBundleIdentifier) {
+                    MacAlarmLog.installer.debug("Registering via bundled login item")
                     return try Self.register(service: SMAppService.loginItem(identifier: loginItemBundleIdentifier))
                 }
 
                 guard Self.bundledPlistExists(plistName: plistName) else {
+                    MacAlarmLog.installer.notice(
+                        "No bundled login item or LaunchAgent plist (unpackaged build?); SMAppService unavailable")
                     return .unavailable("Bundled ServiceManagement LaunchAgent plist is not present.")
                 }
 
+                MacAlarmLog.installer.debug("Registering via app-bundled LaunchAgent plist")
                 return try Self.register(service: SMAppService.agent(plistName: plistName))
             }
         #else
@@ -144,14 +149,24 @@ struct MacAlarmServiceManagementAgentRegistrar: Sendable {
                 try service.register()
             } catch {
                 let nsError = error as NSError
+                MacAlarmLog.installer.notice(
+                    """
+                    SMAppService register threw \(nsError.domain, privacy: .public) \
+                    code \(nsError.code, privacy: .public): \
+                    \(nsError.localizedDescription, privacy: .public)
+                    """)
                 if isAlreadyRegistered(nsError) {
+                    MacAlarmLog.installer.debug("Already registered; unregistering and retrying")
                     try unregisterIgnoringMissing(service)
                     try service.register()
                 } else if isUserApprovalRequired(nsError) {
                     return .requiresApproval
                 } else if isFallbackEligible(nsError) {
+                    MacAlarmLog.installer.notice("Register error is fallback-eligible; legacy install will be used")
                     return .unavailable(nsError.localizedDescription)
                 } else {
+                    MacAlarmLog.installer.error(
+                        "Register error is NOT fallback-eligible; install will fail with this error")
                     throw error
                 }
             }

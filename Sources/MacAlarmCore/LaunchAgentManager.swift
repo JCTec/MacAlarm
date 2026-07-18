@@ -61,18 +61,22 @@ public struct LaunchAgentManager: Sendable {
         let resolvedAgentPath = agentPath ?? paths.agentExecutableURL.path
         let resolvedConfigPath = configPath ?? paths.configURL.path
 
+        MacAlarmLog.launchAgent.info("Legacy install starting")
         try await prepareInstalledSupport(
             agentPath: resolvedAgentPath,
             configPath: resolvedConfigPath,
             createDefaultConfigIfMissing: createDefaultConfigIfMissing
         )
+        MacAlarmLog.launchAgent.debug("Installed support prepared")
 
         let plist = LaunchAgentPlist(executablePath: resolvedAgentPath, configPath: resolvedConfigPath)
         try await Self.writePlist(plist, to: paths.plistURL)
+        MacAlarmLog.launchAgent.debug("LaunchAgent plist written")
 
         var results = [LaunchAgentCommandResult]()
         results.append(try await runRequired(plutilPath, ["-lint", paths.plistURL.path]))
         results.append(contentsOf: try await start())
+        MacAlarmLog.launchAgent.info("Legacy install finished (agent started)")
         return results
     }
 

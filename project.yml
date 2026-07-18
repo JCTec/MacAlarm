@@ -9,7 +9,7 @@ name: MacAlarm
 #   open MacAlarm.xcodeproj      # select the "MacAlarm" scheme, then Cmd+R
 
 options:
-  bundleIdPrefix: dev.jc
+  bundleIdPrefix: com.jctec
   deploymentTarget:
     macOS: "14.0"
   createIntermediateGroups: true
@@ -38,18 +38,24 @@ targets:
     settings:
       base:
         PRODUCT_NAME: MacAlarm
-        PRODUCT_BUNDLE_IDENTIFIER: dev.jc.macalarm.debug
+        PRODUCT_BUNDLE_IDENTIFIER: com.jctec.macalarm
         INFOPLIST_FILE: Xcode/Info.plist
         GENERATE_INFOPLIST_FILE: NO
-        # This app monitors the system / reads the unified log, so it must NOT be
-        # sandboxed and ships no custom entitlements (matches package-release.sh).
-        ENABLE_APP_SANDBOX: NO
-        ENABLE_HARDENED_RUNTIME: NO
-        # Ad-hoc sign for local runs, mirroring the release default (--sign -).
-        CODE_SIGN_STYLE: Manual
-        CODE_SIGN_IDENTITY: "-"
+        # Mac App Store requires App Sandbox on every executable in the bundle.
+        CODE_SIGN_ENTITLEMENTS: Xcode/MacAlarm.entitlements
+        ENABLE_APP_SANDBOX: YES
+        ENABLE_HARDENED_RUNTIME: YES
+        # Automatic signing for local + Archive / App Store Connect upload.
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: "Apple Development"
         CODE_SIGNING_REQUIRED: YES
         CODE_SIGNING_ALLOWED: YES
+        DEVELOPMENT_TEAM: S8662L649U
+      configs:
+        # Emit dSYMs for the main app binary on Release / Archive. Helper dSYMs
+        # are copied into the archive by scripts/xcode-copy-helpers.sh.
+        Release:
+          DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
     postCompileScripts:
       - name: Bundle helper executables (macalarm-agent, macalarmctl)
         script: '"$SRCROOT/scripts/xcode-copy-helpers.sh"'

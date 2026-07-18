@@ -95,6 +95,10 @@ cat > "$CONTENTS_DIR/Info.plist" <<PLIST
   <string>$VERSION</string>
   <key>CFBundleVersion</key>
   <string>1</string>
+  <key>ITSAppUsesNonExemptEncryption</key>
+  <false/>
+  <key>LSApplicationCategoryType</key>
+  <string>public.app-category.utilities</string>
   <key>LSMinimumSystemVersion</key>
   <string>14.0</string>
   <key>NSHighResolutionCapable</key>
@@ -131,6 +135,8 @@ cat > "$LOGIN_ITEM_CONTENTS_DIR/Info.plist" <<PLIST
   <string>$VERSION</string>
   <key>CFBundleVersion</key>
   <string>1</string>
+  <key>ITSAppUsesNonExemptEncryption</key>
+  <false/>
   <key>LSBackgroundOnly</key>
   <true/>
   <key>LSMinimumSystemVersion</key>
@@ -173,14 +179,26 @@ cp "$ROOT_DIR/docs/INSTALLER.md" "$DIST_DIR/INSTALLER.md"
 section "Code signing"
 if command -v codesign >/dev/null 2>&1; then
   SIGN_IDENTITY="${MACALARM_SIGN_IDENTITY:--}"
-  CODESIGN_ARGS=(--force --deep --sign "$SIGN_IDENTITY")
+  APP_ENTITLEMENTS="$ROOT_DIR/Xcode/MacAlarm.entitlements"
+  HELPER_ENTITLEMENTS="$ROOT_DIR/Xcode/MacAlarmHelper.entitlements"
+  CODESIGN_ARGS=(--force --sign "$SIGN_IDENTITY")
   if [[ "$SIGN_IDENTITY" != "-" ]]; then
     CODESIGN_ARGS+=(--options runtime --timestamp)
-    echo "Signing app with Developer ID identity: $SIGN_IDENTITY"
+    echo "Signing app with identity: $SIGN_IDENTITY"
   else
     echo "Signing app ad-hoc for local development."
   fi
-  codesign "${CODESIGN_ARGS[@]}" "$APP_DIR"
+  # Sign nested helpers first (inside-out), each with sandbox entitlements.
+  for helper in macalarm-agent macalarmctl; do
+    codesign "${CODESIGN_ARGS[@]}" --entitlements "$HELPER_ENTITLEMENTS" \
+      "$BIN_RESOURCES_DIR/$helper"
+  done
+  if [[ -x "$LOGIN_ITEM_MACOS_DIR/MacAlarm" ]]; then
+    codesign "${CODESIGN_ARGS[@]}" --entitlements "$HELPER_ENTITLEMENTS" \
+      "$LOGIN_ITEM_APP_DIR"
+  fi
+  # Then the outer app bundle with its own entitlements.
+  codesign "${CODESIGN_ARGS[@]}" --entitlements "$APP_ENTITLEMENTS" "$APP_DIR"
   codesign --verify --deep --strict "$APP_DIR"
 else
   echo "codesign not found; skipping signing"

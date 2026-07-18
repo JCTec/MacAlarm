@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Nested helper executables must also enable App Sandbox for Mac App Store.
+	     Do not use com.apple.security.inherit here: these binaries are launched by
+	     launchd / SMAppService and as standalone CLI tools, so they need their own
+	     sandbox (not inheritance from a parent process). -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<!-- Outbound network for optional notifiers / checkpoints invoked via CLI. -->
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<!-- User-selected paths when exporting proof bundles from macalarmctl. -->
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+</dict>
+</plist>

@@ -189,6 +189,8 @@ public actor AgentStatusStore {
                 #endif
             }.value
         } catch {
+            MacAlarmLog.health.error(
+                "Status snapshot write failed: \(String(describing: error), privacy: .public)")
             snapshot.lastErrorDescription = String(describing: error)
         }
     }

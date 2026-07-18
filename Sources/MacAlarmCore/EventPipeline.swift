@@ -81,8 +81,18 @@ public actor EventPipeline {
                 }
             }
 
+            MacAlarmLog.pipeline.debug(
+                """
+                Processed \(event.source, privacy: .public).\(event.name, privacy: .public): \
+                \(alarms.count, privacy: .public) alarm(s), \(deliveries.count, privacy: .public) delivery(ies)
+                """)
             return EventProcessingResult(record: record, alarms: alarms, deliveries: deliveries)
         } catch {
+            MacAlarmLog.pipeline.error(
+                """
+                Failed to process \(event.source, privacy: .public).\(event.name, privacy: .public): \
+                \(String(describing: error), privacy: .public)
+                """)
             return EventProcessingResult(
                 record: nil, alarms: [], deliveries: [], errorDescription: String(describing: error))
         }
@@ -100,6 +110,11 @@ public actor EventPipeline {
             reason: reason
         )
         try await checkpointSink.enqueue(checkpoint)
+        MacAlarmLog.pipeline.debug(
+            """
+            Enqueued checkpoint (\(reason, privacy: .public)): \
+            \(verification.recordCount, privacy: .public) record(s), valid=\(verification.isValid, privacy: .public)
+            """)
     }
 
     public func writeAnchor(reason: String) async throws {
@@ -118,7 +133,13 @@ public actor EventPipeline {
     public func writeAnchorReportingFailure(reason: String) async {
         do {
             try await writeAnchor(reason: reason)
+            MacAlarmLog.anchor.debug("Anchor written (\(reason, privacy: .public))")
         } catch {
+            MacAlarmLog.anchor.error(
+                """
+                Anchor write failed (\(reason, privacy: .public)): \
+                \(String(describing: error), privacy: .public)
+                """)
             guard !hasReportedAnchorFailure else {
                 return
             }

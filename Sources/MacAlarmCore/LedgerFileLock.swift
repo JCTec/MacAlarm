@@ -35,7 +35,13 @@ enum LedgerFileLock {
     private static func withLock<T>(_ handle: FileHandle, operation: Int32, _ body: () throws -> T) throws -> T {
         #if canImport(Darwin)
             if flock(handle.fileDescriptor, operation) != 0 {
-                throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+                let code = POSIXErrorCode(rawValue: errno) ?? .EIO
+                MacAlarmLog.ledger.error(
+                    """
+                    File lock failed (\(operation == LOCK_EX ? "exclusive" : "shared", privacy: .public)): \
+                    \(code.rawValue, privacy: .public)
+                    """)
+                throw POSIXError(code)
             }
             defer { flock(handle.fileDescriptor, LOCK_UN) }
         #endif

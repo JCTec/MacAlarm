@@ -59,10 +59,19 @@ public actor HashChainLedger {
         let hmacKey = hmacKey
         let fileManager = fileManager
         let maxFileBytes = maxFileBytes
-        return try await runSerializedIO {
-            try Self.rotateIfNeeded(
-                fileURL: fileURL, hmacKey: hmacKey, fileManager: fileManager, maxFileBytes: maxFileBytes)
-            return try Self.append(event, fileURL: fileURL, hmacKey: hmacKey, fileManager: fileManager)
+        do {
+            return try await runSerializedIO {
+                try Self.rotateIfNeeded(
+                    fileURL: fileURL, hmacKey: hmacKey, fileManager: fileManager, maxFileBytes: maxFileBytes)
+                return try Self.append(event, fileURL: fileURL, hmacKey: hmacKey, fileManager: fileManager)
+            }
+        } catch {
+            MacAlarmLog.ledger.error(
+                """
+                Append failed for \(event.source, privacy: .public).\(event.name, privacy: .public): \
+                \(String(describing: error), privacy: .public)
+                """)
+            throw error
         }
     }
 
@@ -70,9 +79,20 @@ public actor HashChainLedger {
         let fileURL = fileURL
         let hmacKey = hmacKey
         let fileManager = fileManager
-        return try await runSerializedIO {
+        let verification = try await runSerializedIO {
             try Self.verify(fileURL: fileURL, hmacKey: hmacKey, fileManager: fileManager)
         }
+        if verification.isValid {
+            MacAlarmLog.ledger.debug(
+                "Verify passed (\(verification.recordCount, privacy: .public) record(s))")
+        } else {
+            MacAlarmLog.ledger.error(
+                """
+                Verify FAILED: \(verification.issues.count, privacy: .public) issue(s), \
+                first: \(verification.issues.first ?? "none", privacy: .public)
+                """)
+        }
+        return verification
     }
 
     public func readRecords() async throws -> [LedgerRecord] {
@@ -320,6 +340,8 @@ public actor HashChainLedger {
                 try newHandle.seekToEnd()
                 try newHandle.write(contentsOf: line)
             }
+            MacAlarmLog.ledger.info(
+                "Ledger rotated; archived segment \(archiveURL.lastPathComponent, privacy: .public)")
         }
     }
 

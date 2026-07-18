@@ -7,6 +7,11 @@ struct MacAlarmNotificationService: Sendable {
         return await notifier.authorizationSnapshot()
     }
 
+    func requestAuthorization() async -> LocalNotificationAuthorization {
+        let notifier = await notifier()
+        return await notifier.requestAuthorization()
+    }
+
     func sendTestNotification(message: String = "MacAlarm notification system is working") async throws
         -> NotificationTestResult
     {

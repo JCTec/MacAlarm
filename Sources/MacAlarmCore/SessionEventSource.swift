@@ -74,6 +74,7 @@ public final class SessionEventSource: NSObject {
         DistributedNotificationCenter.default().removeObserver(self)
         NSWorkspace.shared.notificationCenter.removeObserver(self)
         isRunning = false
+        MacAlarmLog.sources.debug("Session event observers removed")
     }
 
     public func postSelfTest() {
@@ -125,6 +126,7 @@ public final class SessionEventSource: NSObject {
             metadata["userInfoKeys"] = userInfo.keys.map { String(describing: $0) }.sorted().joined(separator: ",")
         }
 
+        MacAlarmLog.sources.debug("Session event mapped: \(eventName, privacy: .public)")
         handler(AlarmEvent(source: "session", name: eventName, metadata: metadata))
     }
 
@@ -157,6 +159,7 @@ public final class SessionEventSource: NSObject {
             metadata.merge(applicationMetadata(app), uniquingKeysWith: { _, new in new })
         }
 
+        MacAlarmLog.sources.debug("Workspace event mapped: \(eventName, privacy: .public)")
         handler(AlarmEvent(source: "session", name: eventName, metadata: metadata))
     }
 

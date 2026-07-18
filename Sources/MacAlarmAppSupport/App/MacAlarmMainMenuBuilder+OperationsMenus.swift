@@ -13,6 +13,11 @@ extension MacAlarmMainMenuBuilder {
             ))
         menu.addItem(
             factory.command(
+                title: "Enable Notifications...",
+                action: #selector(MacAlarmApplicationDelegate.enableNotifications(_:))
+            ))
+        menu.addItem(
+            factory.command(
                 title: "Send Test Notification",
                 action: #selector(MacAlarmApplicationDelegate.sendTestNotification(_:))
             ))

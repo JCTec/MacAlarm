@@ -1,15 +1,20 @@
 import CoreGraphics
+import MacAlarmCore
 
 public struct TimelineLayoutEngine: Sendable {
     public init() {}
 
     public func layout(request: TimelineLayoutRequest) -> TimelineLayout {
-        layout(records: request.records, signature: request.signature, shouldCancel: { false })
+        let state = MacAlarmLog.signposter.beginInterval("timelineLayout")
+        defer { MacAlarmLog.signposter.endInterval("timelineLayout", state) }
+        return layout(records: request.records, signature: request.signature, shouldCancel: { false })
             ?? TimelineLayout.placeholder(for: request)
     }
 
     public func layoutIfNotCancelled(request: TimelineLayoutRequest) -> TimelineLayout? {
-        layout(records: request.records, signature: request.signature) {
+        let state = MacAlarmLog.signposter.beginInterval("timelineLayout")
+        defer { MacAlarmLog.signposter.endInterval("timelineLayout", state) }
+        return layout(records: request.records, signature: request.signature) {
             Task.isCancelled
         }
     }

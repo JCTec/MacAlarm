@@ -25,6 +25,8 @@ extension MacAlarmApplicationDelegate {
                 await refreshRecorderHealthAfterControlAction()
                 showRecorderInstallResult(result, title: "MacAlarm Recorder Installed")
             } catch {
+                MacAlarmLog.installer.error(
+                    "Install failed: \(String(describing: error), privacy: .public)")
                 showError(title: "Install Failed", error: error)
             }
         }

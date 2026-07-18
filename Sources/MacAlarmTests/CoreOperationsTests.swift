@@ -65,6 +65,19 @@ extension MacAlarmTests {
             )
         }
 
+        await runner.run("local notification authorization is opt-in and unavailable when unbundled") {
+            // The test executable is not an .app bundle, so the user-facing
+            // notification path is unavailable and the request degrades cleanly
+            // instead of throwing or claiming success.
+            let notifier = ResilientLocalNotifier(soundEnabled: false, useAppleScriptFallback: true)
+            let result = await notifier.requestAuthorization()
+
+            guard case .unavailable = result else {
+                try expect(false, "unbundled executable should report authorization unavailable, got \(result)")
+                return
+            }
+        }
+
         await runner.run("remote checkpoint outbox writes pending POST payload") {
             let directory = FileManager.default.temporaryDirectory.appendingPathComponent(
                 UUID().uuidString, isDirectory: true)

@@ -47,6 +47,7 @@ struct MacAlarmAgentInstaller: Sendable {
     }
 
     func installAndStartAgent() async throws -> MacAlarmRecorderInstallResult {
+        MacAlarmLog.installer.info("Recorder install requested")
         let helpers = try await bundledHelpers()
 
         _ = await manager.stop()
@@ -56,16 +57,36 @@ struct MacAlarmAgentInstaller: Sendable {
 
         switch try await serviceManagementRegistrar.registerIfPackaged() {
         case .registered:
+            MacAlarmLog.installer.info("Recorder registered via SMAppService")
             return .nativeRegistered
         case .requiresApproval:
+            MacAlarmLog.installer.notice("Recorder registration requires user approval in System Settings")
             return .nativeRequiresApproval
-        case .unavailable:
+        case .unavailable(let reason):
+            guard !Self.isSandboxed else {
+                // The legacy path writes a LaunchAgent plist and helper into
+                // real user Library locations, which a sandboxed process
+                // cannot do; failing early gives an actionable error instead.
+                MacAlarmLog.installer.error(
+                    """
+                    SMAppService unavailable in sandboxed build (\(reason, privacy: .public)); \
+                    legacy LaunchAgent fallback is not possible under App Sandbox
+                    """)
+                throw AppInstallerError.sandboxRequiresBundledRecorder(reason)
+            }
+            MacAlarmLog.installer.notice(
+                """
+                SMAppService unavailable (\(reason, privacy: .public)); \
+                falling back to legacy LaunchAgent
+                """)
             try await manager.install()
+            MacAlarmLog.installer.info("Legacy LaunchAgent installed")
             return .legacyLaunchAgent
         }
     }
 
     func stopLaunchAgent() async {
+        MacAlarmLog.installer.info("Recorder stop requested")
         await serviceManagementRegistrar.unregisterIfPackaged()
         _ = await manager.stop()
     }
@@ -91,9 +112,11 @@ struct MacAlarmAgentInstaller: Sendable {
     }
 
     func uninstallAgent() async throws {
+        MacAlarmLog.installer.info("Recorder uninstall requested")
         await serviceManagementRegistrar.unregisterIfPackaged()
         _ = try await manager.uninstall()
         try await clearRuntimeStatus()
+        MacAlarmLog.installer.info("Recorder uninstalled")
     }
 
     private func clearRuntimeStatus() async throws {
@@ -240,6 +263,10 @@ struct MacAlarmAgentInstaller: Sendable {
         }
     }
 
+    static var isSandboxed: Bool {
+        ProcessInfo.processInfo.environment["APP_SANDBOX_CONTAINER_ID"] != nil
+    }
+
     private static func signAndRegisterAgentBundleIfPossible(paths: MacAlarmInstallationPaths) throws {
         #if canImport(Darwin)
             guard try InstallerToolSupport.isMachOExecutable(paths.agentExecutableURL) else {
@@ -254,6 +281,14 @@ struct MacAlarmAgentInstaller: Sendable {
                 executable: "/usr/bin/codesign",
                 arguments: ["--verify", "--deep", "--strict", paths.agentBundleURL.path]
             )
+
+            guard !isSandboxed else {
+                // lsregister cannot scan paths inside the app's sandbox container
+                // (fails with -10819); the sandboxed recorder path is SMAppService.
+                MacAlarmLog.installer.notice(
+                    "Sandboxed build; skipping LaunchServices registration of the helper app")
+                return
+            }
 
             let lsregister = URL(
                 fileURLWithPath:
@@ -283,6 +318,7 @@ private struct BundledHelpers: Sendable {
 enum AppInstallerError: LocalizedError {
     case missingBundleResource(String)
     case helperSigningFailed(String)
+    case sandboxRequiresBundledRecorder(String)
 
     var errorDescription: String? {
         switch self {
@@ -290,6 +326,13 @@ enum AppInstallerError: LocalizedError {
             message
         case .helperSigningFailed(let message):
             "Could not sign the MacAlarm helper app: \(message)"
+        case .sandboxRequiresBundledRecorder(let reason):
+            """
+            This sandboxed build can only install the recorder through the bundled \
+            login item (SMAppService), which was unavailable: \(reason) \
+            Run the packaged MacAlarm.app (with Contents/Library/LoginItems), or \
+            disable App Sandbox for development runs.
+            """
         }
     }
 }
