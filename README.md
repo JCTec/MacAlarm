@@ -56,6 +56,12 @@ The packaged app has two jobs:
 
 The recorder keeps writing while the app window is closed. The app opens into a horizontal left-to-right timeline where older events are on the left and newer events are on the right. Filter buttons prioritize or hide event families, the inspector shows the selected event in a vertical timeline, and the top bar exposes search, time range, zoom, recorder health, and ledger integrity status.
 
+### Watched Folders (sandboxed builds)
+
+The Recorder menu's **Watched Folders…** window lets you grant MacAlarm access to specific folders via a standard open panel. Each grant is saved as a security-scoped bookmark and re-armed on launch, and changes are forwarded into the ledger (as `custom` events tagged `origin=viewer-watch`) through the shared event spool.
+
+This grant belongs to the MacAlarm **app**, and macOS does not let it cross into the background (launchd-launched) recorder. So on the sandboxed Mac App Store build, folder watching is **active only while MacAlarm.app is running** — an inherent property of the App Sandbox, not a temporary limitation. Keep MacAlarm open (or reopen it) to record folder changes. Unsandboxed builds can additionally watch fixed paths from the recorder via `filesystem.watchedPaths` in `config.json`. See [docs/SANDBOX_BEHAVIOR.md](docs/SANDBOX_BEHAVIOR.md).
+
 ## Install
 
 For local testing, build the release package:

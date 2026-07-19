@@ -26,6 +26,10 @@ final class MacAlarmApplicationDelegate: NSObject, NSApplicationDelegate, NSWind
 
     let launchAgentLabel = "com.jctec.macalarm.agent"
 
+    let watchedFolders = WatchedFolderBookmarks()
+    lazy var watchService = WatchService(bookmarks: watchedFolders, label: launchAgentLabel)
+    var watchedFoldersWindowController: WatchedFoldersWindowController?
+
     var agentInstaller: MacAlarmAgentInstaller {
         MacAlarmAgentInstaller(launchAgentLabel: launchAgentLabel)
     }
@@ -35,11 +39,13 @@ final class MacAlarmApplicationDelegate: NSObject, NSApplicationDelegate, NSWind
         configureMainMenu()
         store.start()
         healthStore.start()
+        watchService.start()
         showTimelineWindow()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         healthStore.stop()
+        watchService.stop()
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

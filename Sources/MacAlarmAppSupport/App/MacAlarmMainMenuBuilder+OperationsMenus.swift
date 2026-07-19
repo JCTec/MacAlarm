@@ -68,6 +68,12 @@ extension MacAlarmMainMenuBuilder {
         menu.addItem(.separator())
         menu.addItem(
             factory.command(
+                title: "Watched Folders...",
+                action: #selector(MacAlarmApplicationDelegate.showWatchedFolders(_:))
+            ))
+        menu.addItem(.separator())
+        menu.addItem(
+            factory.command(
                 title: "Open Recorder Logs",
                 action: #selector(MacAlarmApplicationDelegate.openAgentLogs(_:))
             ))

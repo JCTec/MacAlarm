@@ -122,4 +122,15 @@ public struct MacAlarmInstallationPaths: Codable, Equatable, Sendable {
             0
         #endif
     }
+
+    /// The event spool directory for this install: the configured
+    /// `storage.spoolDirectory` when a config is present, otherwise the default
+    /// install-tree spool. Producers (the app WatchService, macalarmctl) resolve
+    /// the same directory the agent watches.
+    public func resolvedSpoolDirectory() -> URL {
+        if let config = try? MacAlarmConfig.load(from: configURL) {
+            return PathResolver.fileURL(config.storage.spoolDirectory)
+        }
+        return installDirectory.appendingPathComponent("spool", isDirectory: true)
+    }
 }
