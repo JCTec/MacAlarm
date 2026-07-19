@@ -121,7 +121,7 @@ open MacAlarm.xcodeproj       # select the "MacAlarm" scheme, then Cmd+R
 > `.app` bundle.
 
 The `MacAlarm` scheme builds a real `MacAlarm.app` (bundle id
-`com.jctec.macalarm.debug`, app icon, no sandbox — matching the shipped app) and a
+`com.jc-tec.macalarm.debug`, app icon, no sandbox — matching the shipped app) and a
 build phase bundles the `macalarm-agent` and `macalarmctl` helpers into
 `Contents/Resources/bin`, so menu-bar, permission, and helper flows behave as in
 a packaged build. Re-run `xcodegen generate` after adding or removing source
@@ -196,7 +196,7 @@ Installed MacAlarm uses predictable per-user locations:
   bin/macalarmctl
 
 ~/Library/Logs/MacAlarm/
-~/Library/LaunchAgents/com.jctec.macalarm.agent.plist
+~/Library/LaunchAgents/com.jc-tec.macalarm.agent.plist
 ```
 
 The LaunchAgent plist is only used by the legacy/fallback install path. Packaged builds prefer the bundled visible login item helper through `SMAppService`.

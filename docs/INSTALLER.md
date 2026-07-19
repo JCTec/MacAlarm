@@ -85,7 +85,7 @@ The installer:
 
 - uses bundled release binaries when installing from `dist`
 - registers the bundled `Contents/Library/LoginItems/MacAlarm Recorder.app` with `SMAppService` when available
-- falls back to the bundled `Contents/Library/LaunchAgents/com.jctec.macalarm.agent.plist` when the Login Item helper is unavailable
+- falls back to the bundled `Contents/Library/LaunchAgents/com.jc-tec.macalarm.agent.plist` when the Login Item helper is unavailable
 - keeps an installed helper fallback at `~/Library/Application Support/MacAlarm/MacAlarm.app`
 - installs `macalarmctl` into `~/Library/Application Support/MacAlarm/bin`
 - creates `~/Library/Application Support/MacAlarm/config.json` if needed
@@ -93,7 +93,7 @@ The installer:
 - disables the development fallback key in config once a real installed key exists
 - preserves existing config and active production ledger files
 - archives an older development-fallback ledger into `~/Library/Application Support/MacAlarm/archives` before starting the production ledger
-- writes `~/Library/LaunchAgents/com.jctec.macalarm.agent.plist` only when the app-bundled ServiceManagement path is unavailable
+- writes `~/Library/LaunchAgents/com.jc-tec.macalarm.agent.plist` only when the app-bundled ServiceManagement path is unavailable
 - starts the recorder immediately
 - enables it to start again at login
 - writes stdout/stderr logs to `~/Library/Logs/MacAlarm` for both native and fallback launches
@@ -108,7 +108,7 @@ The installer:
 "$HOME/Library/Application Support/MacAlarm/bin/macalarmctl" export-proof \
   --config "$HOME/Library/Application Support/MacAlarm/config.json" \
   --output /tmp/MacAlarm-Proof
-launchctl print "gui/$(id -u)/com.jctec.macalarm.agent"
+launchctl print "gui/$(id -u)/com.jc-tec.macalarm.agent"
 tail -f "$HOME/Library/Logs/MacAlarm/agent.out.log"
 "$HOME/Library/Application Support/MacAlarm/bin/macalarmctl" verify-ledger \
   --config "$HOME/Library/Application Support/MacAlarm/config.json"

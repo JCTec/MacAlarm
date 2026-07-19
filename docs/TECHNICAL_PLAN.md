@@ -209,7 +209,7 @@ The app should be explicit that this is a visible user LaunchAgent, not stealth 
 Use:
 
 ```text
-~/Library/LaunchAgents/com.jctec.macalarm.agent.plist
+~/Library/LaunchAgents/com.jc-tec.macalarm.agent.plist
 ```
 
 ### LaunchAgent Label
@@ -217,7 +217,7 @@ Use:
 Use:
 
 ```text
-com.jctec.macalarm.agent
+com.jc-tec.macalarm.agent
 ```
 
 ### Core Installer API
@@ -236,8 +236,8 @@ Responsibilities:
 - Validate plist path and executable path.
 - Call `launchctl bootstrap gui/$UID`.
 - Call `launchctl bootout gui/$UID`.
-- Call `launchctl kickstart -k gui/$UID/com.jctec.macalarm.agent`.
-- Query `launchctl print gui/$UID/com.jctec.macalarm.agent`.
+- Call `launchctl kickstart -k gui/$UID/com.jc-tec.macalarm.agent`.
+- Query `launchctl print gui/$UID/com.jc-tec.macalarm.agent`.
 
 Possible API:
 

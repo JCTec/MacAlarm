@@ -8,9 +8,9 @@ below states what to do and how to confirm it.
 ## Signing & capabilities (Apple Developer portal + Xcode)
 
 1. **App Groups capability** — In the Apple Developer portal, add the App Group
-   `S8662L649U.com.jctec.macalarm.shared` to both the app
-   (`com.jctec.macalarm`) and the recorder login item
-   (`com.jctec.macalarm.recorder`) App IDs, then enable the App Groups
+   `S8662L649U.com.jc-tec.macalarm.shared` to both the app
+   (`com.jc-tec.macalarm`) and the recorder login item
+   (`com.jc-tec.macalarm.recorder`) App IDs, then enable the App Groups
    capability for the `MacAlarm` target in Xcode (Signing & Capabilities). The
    entitlement is already present in `Xcode/MacAlarm.entitlements` and
    `Xcode/MacAlarmHelper.entitlements`; the portal must authorize it for the
@@ -20,13 +20,22 @@ below states what to do and how to confirm it.
      Console (`log stream --predicate 'subsystem == "dev.jc.macalarm.diagnostics"'`).
 
 2. **iCloud (ubiquity container) capability** — Enable the iCloud capability
-   with the container `iCloud.com.jctec.macalarm` for the app AND the recorder
+   with the container `iCloud.com.jc-tec.macalarm` for the app AND the recorder
    login item App IDs in the portal, and turn on iCloud → iCloud Documents for
    the `MacAlarm` target. Entitlement
    `com.apple.developer.ubiquity-container-identifiers` is already in both
    entitlements files.
    - Confirm: on a device signed into iCloud, the anchor writes appear under
-     `~/Library/Mobile Documents/iCloud~com~jctec~macalarm/Documents/MacAlarm`.
+     `~/Library/Mobile Documents/iCloud~com~jc-tec~macalarm/Documents/MacAlarm`.
+   - Note: the namespace was renamed `com.jctec` → `com.jc-tec` for portal
+     availability. Until the App Groups + iCloud capabilities are enabled for the
+     new `com.jc-tec.macalarm` App IDs, `xcodebuild -scheme MacAlarm build` fails
+     signing with: *"Provisioning profile … doesn't match the entitlements file's
+     values for the com.apple.developer.ubiquity-container-identifiers and
+     com.apple.developer.icloud-container-identifiers entitlements."* The build
+     compiles and assembles the correct `com.jc-tec` product
+     (`CODE_SIGNING_ALLOWED=NO build` succeeds); only the signature waits on the
+     portal.
 
 3. **verify-release.sh packaged-helper smoke test needs a real signing
    identity.** On macOS 26 (Darwin 25+), an *ad-hoc*-signed binary carrying

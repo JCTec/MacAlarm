@@ -1,7 +1,7 @@
 #!/bin/zsh
 set -euo pipefail
 
-LABEL="com.jctec.macalarm.agent"
+LABEL="com.jc-tec.macalarm.agent"
 SCRIPT_DIR="$(cd -- "$(dirname -- "$0")" && pwd)"
 ROOT_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 INSTALL_DIR="$HOME/Library/Application Support/MacAlarm"

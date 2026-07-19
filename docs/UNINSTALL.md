@@ -20,23 +20,23 @@ A normal per-user install may create:
 
 ~/Library/Logs/MacAlarm/
 
-~/Library/LaunchAgents/com.jctec.macalarm.agent.plist
+~/Library/LaunchAgents/com.jc-tec.macalarm.agent.plist
 
 ~/Library/Mobile Documents/com~apple~CloudDocs/MacAlarm/     # unsandboxed iCloudDrive anchors
   anchor-latest.json
   anchor-history.jsonl
 
-~/Library/Mobile Documents/iCloud~com~jctec~macalarm/Documents/MacAlarm/   # sandboxed (App Store) iCloudDrive anchors
+~/Library/Mobile Documents/iCloud~com~jc-tec~macalarm/Documents/MacAlarm/   # sandboxed (App Store) iCloudDrive anchors
   anchor-latest.json
   anchor-history.jsonl
 ```
 
 The iCloud Drive `MacAlarm` folder holds ledger hash anchors (see `hashAnchor` in `config.json`). Its exact location depends on `hashAnchor.destination`:
 
-- `iCloudDrive` (default): the unsandboxed build uses `~/Library/Mobile Documents/com~apple~CloudDocs/MacAlarm/`; the sandboxed Mac App Store build uses its ubiquity container `~/Library/Mobile Documents/iCloud~com~jctec~macalarm/Documents/MacAlarm/`. Both sync off the Mac by design; a full cleanup should remove the folder from iCloud Drive as well.
+- `iCloudDrive` (default): the unsandboxed build uses `~/Library/Mobile Documents/com~apple~CloudDocs/MacAlarm/`; the sandboxed Mac App Store build uses its ubiquity container `~/Library/Mobile Documents/iCloud~com~jc-tec~macalarm/Documents/MacAlarm/`. Both sync off the Mac by design; a full cleanup should remove the folder from iCloud Drive as well.
 - `directory`: anchors live at the literal `hashAnchor.directory` path — remove that folder instead.
 
-The sandboxed App Store build also keeps all of its ledger/config/secrets/runtime/outbox/spool state inside the App Group container at `~/Library/Group Containers/S8662L649U.com.jctec.macalarm.shared/`; removing that directory clears the sandboxed install. If `storage.maxLedgerFileBytes` is set, rotated ledger segments named `events-rotated-*.jsonl` sit beside `events.jsonl`.
+The sandboxed App Store build also keeps all of its ledger/config/secrets/runtime/outbox/spool state inside the App Group container at `~/Library/Group Containers/S8662L649U.com.jc-tec.macalarm.shared/`; removing that directory clears the sandboxed install. If `storage.maxLedgerFileBytes` is set, rotated ledger segments named `events-rotated-*.jsonl` sit beside `events.jsonl`.
 
 Packaged builds prefer the visible login item helper bundled inside `MacAlarm.app`:
 
@@ -84,9 +84,9 @@ rm -rf \
   "$HOME/Applications/MacAlarm.app" \
   "$HOME/Library/Application Support/MacAlarm" \
   "$HOME/Library/Logs/MacAlarm" \
-  "$HOME/Library/LaunchAgents/com.jctec.macalarm.agent.plist" \
-  "$HOME/Library/LaunchAgents/com.jctec.macalarm.recorder.plist" \
-  "$HOME/Library/LaunchAgents/com.jctec.macalarm.plist"
+  "$HOME/Library/LaunchAgents/com.jc-tec.macalarm.agent.plist" \
+  "$HOME/Library/LaunchAgents/com.jc-tec.macalarm.recorder.plist" \
+  "$HOME/Library/LaunchAgents/com.jc-tec.macalarm.plist"
 ```
 
 Optional development cleanup:
@@ -95,12 +95,12 @@ Optional development cleanup:
 find "$HOME/Library/Preferences" -maxdepth 1 -type f \( \
   -name 'MacAlarm*.plist' -o \
   -name 'macalarm*.plist' -o \
-  -name 'com.jctec.macalarm*.plist' \
+  -name 'com.jc-tec.macalarm*.plist' \
 \) -delete
 
 find /private/tmp /var/tmp "${TMPDIR:-/tmp}" -maxdepth 5 \( \
   -iname '*macalarm*' -o \
-  -iname '*com.jctec.macalarm*' \
+  -iname '*com.jc-tec.macalarm*' \
 \) -exec rm -rf {} +
 ```
 
@@ -112,7 +112,7 @@ Do not run broad system cleanup commands from project scripts. Keep uninstall be
 pgrep -afil 'MacAlarm|macalarm' || true
 
 uid="$(id -u)"
-for label in com.jctec.macalarm.agent com.jctec.macalarm.recorder com.jctec.macalarm; do
+for label in com.jc-tec.macalarm.agent com.jc-tec.macalarm.recorder com.jc-tec.macalarm; do
   launchctl print "gui/$uid/$label" >/dev/null 2>&1 && echo "loaded $label" || echo "not loaded $label"
 done
 
@@ -121,7 +121,7 @@ find "$HOME" \( \
   -path "$HOME/Dev/Logging System/*" \
 \) -prune -o \( \
   -iname '*macalarm*' -o \
-  -iname '*com.jctec.macalarm*' \
+  -iname '*com.jc-tec.macalarm*' \
 \) -print 2>/dev/null
 ```
 
@@ -135,7 +135,7 @@ This kind of stale row does not mean the recorder is running. Trust these checks
 
 ```sh
 pgrep -afil 'MacAlarm|macalarm' || true
-launchctl print "gui/$(id -u)/com.jctec.macalarm.agent"
+launchctl print "gui/$(id -u)/com.jc-tec.macalarm.agent"
 ```
 
 If the service is not found and no process is running, the recorder is gone.

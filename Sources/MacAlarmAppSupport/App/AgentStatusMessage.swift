@@ -50,7 +50,7 @@ struct AgentStatusMessage: Equatable, Sendable {
         if let serviceManagementStatusText {
             lines.append("Registration: \(serviceManagementStatusText)")
             lines.append("Bundled helper: MacAlarm.app/Contents/Library/LoginItems/MacAlarm Recorder.app")
-            lines.append("Fallback plist: MacAlarm.app/Contents/Library/LaunchAgents/com.jctec.macalarm.agent.plist")
+            lines.append("Fallback plist: MacAlarm.app/Contents/Library/LaunchAgents/com.jc-tec.macalarm.agent.plist")
             lines.append("Legacy user plist: \(plistPath)")
         } else {
             lines.append("Plist: \(plistPath)")

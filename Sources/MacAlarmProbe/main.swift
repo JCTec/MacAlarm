@@ -146,7 +146,7 @@ struct MacAlarmProbe {
     }
 
     private static func runLogProbe() throws {
-        let subsystem = "com.jctec.macalarm"
+        let subsystem = "com.jc-tec.macalarm"
         let logger = Logger(subsystem: subsystem, category: "probe")
         logger.error("macalarm OSLogStore self-test")
 

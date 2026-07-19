@@ -27,7 +27,7 @@ public struct SystemUbiquityContainerResolver: UbiquityContainerResolving {
 /// is nil — the permanent attributed-failure state, never a fallback write
 /// somewhere else.
 public struct AnchorDestinationResolver: Sendable {
-    public static let iCloudContainerIdentifier = "iCloud.com.jctec.macalarm"
+    public static let iCloudContainerIdentifier = "iCloud.com.jc-tec.macalarm"
 
     public let config: HashAnchorConfig
     public let ubiquity: any UbiquityContainerResolving

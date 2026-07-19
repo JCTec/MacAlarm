@@ -126,9 +126,9 @@ echo "note: bundled helpers into $DEST_DIR"
 # required inside-out signature order.
 # ---------------------------------------------------------------------------
 APP_CONTENTS_DIR="${TARGET_BUILD_DIR:-$ROOT_DIR/build}/${CONTENTS_FOLDER_PATH:-MacAlarm.app/Contents}"
-LOGIN_ITEM_BUNDLE_ID="${MACALARM_LOGIN_ITEM_BUNDLE_ID:-com.jctec.macalarm.recorder}"
-APP_BUNDLE_ID="${PRODUCT_BUNDLE_IDENTIFIER:-com.jctec.macalarm}"
-AGENT_LABEL="com.jctec.macalarm.agent"
+LOGIN_ITEM_BUNDLE_ID="${MACALARM_LOGIN_ITEM_BUNDLE_ID:-com.jc-tec.macalarm.recorder}"
+APP_BUNDLE_ID="${PRODUCT_BUNDLE_IDENTIFIER:-com.jc-tec.macalarm}"
+AGENT_LABEL="com.jc-tec.macalarm.agent"
 RECORDER_VERSION="${MARKETING_VERSION:-0.1.0}"
 RECORDER_BUILD="${CURRENT_PROJECT_VERSION:-1}"
 APP_ICON_PATH="$ROOT_DIR/DesignAssets/AppIcon/MacAlarm.icns"

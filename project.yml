@@ -9,7 +9,7 @@ name: MacAlarm
 #   open MacAlarm.xcodeproj      # select the "MacAlarm" scheme, then Cmd+R
 
 options:
-  bundleIdPrefix: com.jctec
+  bundleIdPrefix: com.jc-tec
   deploymentTarget:
     macOS: "14.0"
   createIntermediateGroups: true
@@ -38,7 +38,7 @@ targets:
     settings:
       base:
         PRODUCT_NAME: MacAlarm
-        PRODUCT_BUNDLE_IDENTIFIER: com.jctec.macalarm
+        PRODUCT_BUNDLE_IDENTIFIER: com.jc-tec.macalarm
         INFOPLIST_FILE: Xcode/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         # Mac App Store requires App Sandbox on every executable in the bundle.

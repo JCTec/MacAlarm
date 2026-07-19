@@ -23,7 +23,7 @@ if [[ ! -x "$EXECUTABLE" ]]; then
 fi
 
 pkill -f "$APP_DIR/Contents/MacOS/MacAlarmApp" 2>/dev/null || true
-rm -rf "$HOME/Library/Saved Application State/com.jctec.macalarm.debug.savedState"
+rm -rf "$HOME/Library/Saved Application State/com.jc-tec.macalarm.debug.savedState"
 rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$BIN_RESOURCES_DIR"
 cp "$EXECUTABLE" "$MACOS_DIR/MacAlarmApp"
@@ -50,7 +50,7 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
   <key>CFBundleIconFile</key>
   <string>MacAlarm</string>
   <key>CFBundleIdentifier</key>
-  <string>com.jctec.macalarm.debug</string>
+  <string>com.jc-tec.macalarm.debug</string>
   <key>CFBundleName</key>
   <string>MacAlarm</string>
   <key>CFBundlePackageType</key>

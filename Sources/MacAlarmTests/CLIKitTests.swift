@@ -97,7 +97,7 @@ extension MacAlarmTests {
             defer { try? FileManager.default.removeItem(at: homeDirectory) }
 
             let paths = MacAlarmInstallationPaths(
-                label: "com.jctec.macalarm.tests",
+                label: "com.jc-tec.macalarm.tests",
                 homeDirectory: homeDirectory,
                 userID: 501
             )

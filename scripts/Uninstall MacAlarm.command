@@ -1,7 +1,7 @@
 #!/bin/zsh
 set -euo pipefail
 
-LABEL="com.jctec.macalarm.agent"
+LABEL="com.jc-tec.macalarm.agent"
 PLIST_PATH="$HOME/Library/LaunchAgents/$LABEL.plist"
 INSTALL_DIR="$HOME/Library/Application Support/MacAlarm"
 LOG_DIR="$HOME/Library/Logs/MacAlarm"

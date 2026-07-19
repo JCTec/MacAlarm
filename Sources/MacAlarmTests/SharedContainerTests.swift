@@ -57,7 +57,7 @@ extension MacAlarmTests {
             SandboxEnvironment.overrideIsSandboxed = true
             MacAlarmSharedContainer.overrideContainerURL = container
 
-            let paths = MacAlarmInstallationPaths(label: "com.jctec.macalarm.agent", homeDirectory: home)
+            let paths = MacAlarmInstallationPaths(label: "com.jc-tec.macalarm.agent", homeDirectory: home)
             let expectedInstall = container.appendingPathComponent("Application Support/MacAlarm")
             try expect(
                 paths.installDirectory.path == expectedInstall.path,
@@ -77,14 +77,14 @@ extension MacAlarmTests {
 
             let home = FileManager.default.temporaryDirectory.appendingPathComponent(
                 UUID().uuidString, isDirectory: true)
-            let paths = MacAlarmInstallationPaths(label: "com.jctec.macalarm.agent", homeDirectory: home)
+            let paths = MacAlarmInstallationPaths(label: "com.jc-tec.macalarm.agent", homeDirectory: home)
             try expect(
                 paths.installDirectory.path
                     == home.appendingPathComponent("Library/Application Support/MacAlarm").path,
                 "unsandboxed install dir should keep the ~/Library layout")
             try expect(
                 paths.plistURL.path
-                    == home.appendingPathComponent("Library/LaunchAgents/com.jctec.macalarm.agent.plist").path,
+                    == home.appendingPathComponent("Library/LaunchAgents/com.jc-tec.macalarm.agent.plist").path,
                 "unsandboxed plist should keep the ~/Library/LaunchAgents layout")
         }
 
@@ -101,7 +101,7 @@ extension MacAlarmTests {
             SandboxEnvironment.overrideIsSandboxed = true
             MacAlarmSharedContainer.overrideContainerURL = container
 
-            let paths = MacAlarmInstallationPaths(label: "com.jctec.macalarm.agent")
+            let paths = MacAlarmInstallationPaths(label: "com.jc-tec.macalarm.agent")
             let config = MacAlarmConfig.installedDefault(paths: paths)
             try expect(
                 config.storage.ledgerPath.hasPrefix(container.path),
@@ -120,7 +120,7 @@ extension MacAlarmTests {
             defer { SandboxEnvironment.overrideIsSandboxed = sandboxPrevious }
             SandboxEnvironment.overrideIsSandboxed = false
 
-            let paths = MacAlarmInstallationPaths(label: "com.jctec.macalarm.agent")
+            let paths = MacAlarmInstallationPaths(label: "com.jc-tec.macalarm.agent")
             let config = MacAlarmConfig.installedDefault(paths: paths)
             try expect(
                 config.storage == StorageConfig.default,

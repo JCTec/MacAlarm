@@ -91,7 +91,7 @@ public actor LocalNotificationNotifier: AlarmNotifier {
         content.title = alarm.severity.rawValue.uppercased()
         content.body = alarm.message
         content.subtitle = "\(alarm.event.source): \(alarm.event.name)"
-        content.threadIdentifier = "com.jctec.macalarm.\(alarm.ruleID)"
+        content.threadIdentifier = "com.jc-tec.macalarm.\(alarm.ruleID)"
         content.userInfo = [
             "alarmID": alarm.id.uuidString,
             "ruleID": alarm.ruleID,

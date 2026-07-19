@@ -24,7 +24,7 @@ final class MacAlarmApplicationDelegate: NSObject, NSApplicationDelegate, NSWind
     var inspectorAutoOpenMenuItem: NSMenuItem?
     var inspectorSummaryHeaderMenuItem: NSMenuItem?
 
-    let launchAgentLabel = "com.jctec.macalarm.agent"
+    let launchAgentLabel = "com.jc-tec.macalarm.agent"
 
     let watchedFolders = WatchedFolderBookmarks()
     lazy var watchService = WatchService(bookmarks: watchedFolders, label: launchAgentLabel)

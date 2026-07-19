@@ -19,17 +19,17 @@
 	     event spool here so all three processes share one source of truth. -->
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>S8662L649U.com.jctec.macalarm.shared</string>
+		<string>S8662L649U.com.jc-tec.macalarm.shared</string>
 	</array>
 	<!-- The recorder helper writes ledger hash anchors, so it needs the same
 	     iCloud Drive (ubiquity container) access as the app (Part C). -->
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
-		<string>iCloud.com.jctec.macalarm</string>
+		<string>iCloud.com.jc-tec.macalarm</string>
 	</array>
 	<key>com.apple.developer.ubiquity-container-identifiers</key>
 	<array>
-		<string>iCloud.com.jctec.macalarm</string>
+		<string>iCloud.com.jc-tec.macalarm</string>
 	</array>
 	<key>com.apple.developer.icloud-services</key>
 	<array>

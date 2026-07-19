@@ -5,7 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 VERSION="${MACALARM_VERSION:-0.1.0}"
-BUNDLE_ID="${MACALARM_BUNDLE_ID:-com.jctec.macalarm}"
+BUNDLE_ID="${MACALARM_BUNDLE_ID:-com.jc-tec.macalarm}"
 DIST_DIR="$ROOT_DIR/dist"
 APP_DIR="$DIST_DIR/MacAlarm.app"
 CONTENTS_DIR="$APP_DIR/Contents"
@@ -19,8 +19,8 @@ LOGIN_ITEM_RESOURCES_DIR="$LOGIN_ITEM_CONTENTS_DIR/Resources"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
 BIN_RESOURCES_DIR="$RESOURCES_DIR/bin"
 APP_ICON_PATH="$ROOT_DIR/DesignAssets/AppIcon/MacAlarm.icns"
-AGENT_LABEL="com.jctec.macalarm.agent"
-LOGIN_ITEM_BUNDLE_ID="${MACALARM_LOGIN_ITEM_BUNDLE_ID:-com.jctec.macalarm.recorder}"
+AGENT_LABEL="com.jc-tec.macalarm.agent"
+LOGIN_ITEM_BUNDLE_ID="${MACALARM_LOGIN_ITEM_BUNDLE_ID:-com.jc-tec.macalarm.recorder}"
 
 section() {
   echo

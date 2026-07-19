@@ -10,7 +10,7 @@ final class LedgerIntegrityStore: ObservableObject {
     private let proofService: MacAlarmProofService
     private var refreshTask: Task<Void, Never>?
 
-    init(launchAgentLabel: String = "com.jctec.macalarm.agent") {
+    init(launchAgentLabel: String = "com.jc-tec.macalarm.agent") {
         self.proofService = MacAlarmProofService(launchAgentLabel: launchAgentLabel)
     }
 

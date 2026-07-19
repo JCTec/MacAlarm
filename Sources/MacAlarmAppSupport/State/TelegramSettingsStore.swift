@@ -16,7 +16,7 @@ final class TelegramSettingsStore: ObservableObject {
     private var loadTask: Task<Void, Never>?
     private var saveTask: Task<Void, Never>?
 
-    init(launchAgentLabel: String = "com.jctec.macalarm.agent") {
+    init(launchAgentLabel: String = "com.jc-tec.macalarm.agent") {
         self.launchAgentLabel = launchAgentLabel
     }
 

@@ -5,7 +5,7 @@ import Foundation
 public final class SessionEventSource: NSObject {
     public static let screenLockedName = Notification.Name("com.apple.screenIsLocked")
     public static let screenUnlockedName = Notification.Name("com.apple.screenIsUnlocked")
-    public static let selfTestName = Notification.Name("com.jctec.macalarm.selftest")
+    public static let selfTestName = Notification.Name("com.jc-tec.macalarm.selftest")
 
     private let handler: @MainActor @Sendable (AlarmEvent) -> Void
     private var isRunning = false

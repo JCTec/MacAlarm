@@ -21,7 +21,7 @@ public struct MacAlarmInstallationPaths: Codable, Equatable, Sendable {
     public var standardErrorURL: URL
 
     public init(
-        label: String = "com.jctec.macalarm.agent",
+        label: String = "com.jc-tec.macalarm.agent",
         homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser,
         userID: UInt32 = MacAlarmInstallationPaths.currentUserID()
     ) {

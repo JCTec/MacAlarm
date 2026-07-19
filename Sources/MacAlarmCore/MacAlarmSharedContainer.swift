@@ -10,7 +10,7 @@ import Foundation
 /// live here — resolving them into any private container would give three
 /// processes three different ledgers (the "split-brain" P1/P2 forbid).
 ///
-/// The group identifier is `<TeamID>.com.jctec.macalarm.shared`, matching the
+/// The group identifier is `<TeamID>.com.jc-tec.macalarm.shared`, matching the
 /// `com.apple.security.application-groups` entitlement in both
 /// `Xcode/MacAlarm.entitlements` and `Xcode/MacAlarmHelper.entitlements`. If the
 /// team changes, update this constant and both entitlements together.
@@ -20,7 +20,7 @@ public enum MacAlarmSharedContainer {
     public static let teamIdentifier = "S8662L649U"
 
     /// Suffix shared with the entitlement files.
-    public static let groupSuffix = "com.jctec.macalarm.shared"
+    public static let groupSuffix = "com.jc-tec.macalarm.shared"
 
     /// Fully-qualified App Group identifier passed to
     /// `containerURL(forSecurityApplicationGroupIdentifier:)`.
@@ -92,5 +92,5 @@ public enum MacAlarmSharedContainer {
     /// startup guard the container explicitly and surface
     /// `MacAlarmError.appGroupUnavailable` before reaching real I/O.
     public static let unresolvedSentinelDirectory = URL(fileURLWithPath: "/dev/null", isDirectory: true)
-        .appendingPathComponent("com.jctec.macalarm.app-group-unavailable", isDirectory: true)
+        .appendingPathComponent("com.jc-tec.macalarm.app-group-unavailable", isDirectory: true)
 }

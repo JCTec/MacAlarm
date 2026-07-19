@@ -24,10 +24,10 @@ attributed-failure surface.
 
 | Feature | Sandboxed (Mac App Store) | Unsandboxed (SwiftPM / dev) |
 | --- | --- | --- |
-| **Shared state** (ledger, config, secrets, runtime status, outbox, spool) | App Group container `S8662L649U.com.jctec.macalarm.shared` (`Application Support/MacAlarm`), so app + recorder + macalarmctl share one source of truth. If the container is unresolvable, install/startup fail with `unavailable under App Sandbox: the app group container '…' could not be resolved` — never a silent private-container fallback. | `~/Library/Application Support/MacAlarm/…` (unchanged). |
-| **Recorder install** | Bundled login item `com.jctec.macalarm.recorder` via `SMAppService.loginItem` (Background Items approval), with the app-bundled `com.jctec.macalarm.agent.plist` as the `SMAppService.agent` fallback. The legacy `~/Library/LaunchAgents` install is `unavailable under App Sandbox: it writes into ~/Library outside the container` and throws `AppInstallerError.sandboxRequiresBundledRecorder`. | `SMAppService` when packaged, else legacy per-user `LaunchAgent`. |
+| **Shared state** (ledger, config, secrets, runtime status, outbox, spool) | App Group container `S8662L649U.com.jc-tec.macalarm.shared` (`Application Support/MacAlarm`), so app + recorder + macalarmctl share one source of truth. If the container is unresolvable, install/startup fail with `unavailable under App Sandbox: the app group container '…' could not be resolved` — never a silent private-container fallback. | `~/Library/Application Support/MacAlarm/…` (unchanged). |
+| **Recorder install** | Bundled login item `com.jc-tec.macalarm.recorder` via `SMAppService.loginItem` (Background Items approval), with the app-bundled `com.jc-tec.macalarm.agent.plist` as the `SMAppService.agent` fallback. The legacy `~/Library/LaunchAgents` install is `unavailable under App Sandbox: it writes into ~/Library outside the container` and throws `AppInstallerError.sandboxRequiresBundledRecorder`. | `SMAppService` when packaged, else legacy per-user `LaunchAgent`. |
 | **LaunchServices registration** of the helper app | Skipped: `LaunchServices registration of the helper app unavailable under App Sandbox: lsregister cannot scan the container; skipping`. | Runs `lsregister -f`. |
-| **Hash anchoring** (`hashAnchor.destination = iCloudDrive`, default) | iCloud **ubiquity container** `url(forUbiquityContainerIdentifier: iCloud.com.jctec.macalarm)/Documents/MacAlarm`. iCloud signed out → one `anchor.write.failed` ledger event + one attributed `.error` log (`iCloud Drive is unavailable (signed out, or ubiquity container '…' is nil); …`), repeat-suppressed, surfaced in `doctor`. | `~/Library/Mobile Documents/com~apple~CloudDocs/MacAlarm`. |
+| **Hash anchoring** (`hashAnchor.destination = iCloudDrive`, default) | iCloud **ubiquity container** `url(forUbiquityContainerIdentifier: iCloud.com.jc-tec.macalarm)/Documents/MacAlarm`. iCloud signed out → one `anchor.write.failed` ledger event + one attributed `.error` log (`iCloud Drive is unavailable (signed out, or ubiquity container '…' is nil); …`), repeat-suppressed, surfaced in `doctor`. | `~/Library/Mobile Documents/com~apple~CloudDocs/MacAlarm`. |
 | **Hash anchoring** (`hashAnchor.destination = directory`) | The literal `hashAnchor.directory` (must be inside the container to be writable). | The literal `hashAnchor.directory`. |
 | **Custom event transport** (spool) | Producers write canonical-JSON events into `<container>/…/spool`; the recorder ingests + deletes them. Primary and only reliable transport. | Same spool under `~/Library/Application Support/MacAlarm/spool`. |
 | **Unified-log ingestion** | `currentProcess`-scope templates work. `system`-scope templates are `unavailable under App Sandbox: system-scope OSLogStore requires an entitlement the sandbox denies` → one `unifiedLog`/`query.unavailable` event (`reason=app-sandbox`) per template per run, then skipped. `ConfigValidator` warns. | All scopes work (kept for third-party producers logging to `dev.jc.macalarm.custom`). |
@@ -50,10 +50,10 @@ Each of these is an intended, attributed response to a genuinely absent capabili
 
 ## Identifiers
 
-- App / bundle id: `com.jctec.macalarm`
-- Recorder login item: `com.jctec.macalarm.recorder`
-- Agent LaunchAgent label: `com.jctec.macalarm.agent`
-- App Group: `S8662L649U.com.jctec.macalarm.shared`
-- iCloud container: `iCloud.com.jctec.macalarm`
+- App / bundle id: `com.jc-tec.macalarm`
+- Recorder login item: `com.jc-tec.macalarm.recorder`
+- Agent LaunchAgent label: `com.jc-tec.macalarm.agent`
+- App Group: `S8662L649U.com.jc-tec.macalarm.shared`
+- iCloud container: `iCloud.com.jc-tec.macalarm`
 - Log namespaces (unchanged, not bundle ids): `dev.jc.macalarm.custom` (custom-event
   subsystem), `dev.jc.macalarm.diagnostics` (MacAlarm's own diagnostics).

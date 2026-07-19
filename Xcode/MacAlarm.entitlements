@@ -21,18 +21,18 @@
 	     the viewer app, the recorder login item, and macalarmctl alike. -->
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>S8662L649U.com.jctec.macalarm.shared</string>
+		<string>S8662L649U.com.jc-tec.macalarm.shared</string>
 	</array>
 	<!-- iCloud Drive destination for ledger hash anchors (Part C). Anchors leave
 	     the Mac's own trust domain by landing in the ubiquity container. Generated
 	     by the iCloud → iCloud Documents capability; the portal must provision it. -->
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
-		<string>iCloud.com.jctec.macalarm</string>
+		<string>iCloud.com.jc-tec.macalarm</string>
 	</array>
 	<key>com.apple.developer.ubiquity-container-identifiers</key>
 	<array>
-		<string>iCloud.com.jctec.macalarm</string>
+		<string>iCloud.com.jc-tec.macalarm</string>
 	</array>
 	<key>com.apple.developer.icloud-services</key>
 	<array>

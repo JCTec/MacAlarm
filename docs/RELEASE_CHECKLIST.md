@@ -93,7 +93,7 @@ After uninstalling a release candidate, verify there are no unexpected leftovers
 ```sh
 pgrep -afil 'MacAlarm|macalarm' || true
 find "$HOME/Library/Application Support" "$HOME/Library/Logs" "$HOME/Library/LaunchAgents" "$HOME/Library/Preferences" \
-  -maxdepth 4 \( -iname '*macalarm*' -o -iname '*com.jctec.macalarm*' \) -print 2>/dev/null
+  -maxdepth 4 \( -iname '*macalarm*' -o -iname '*com.jc-tec.macalarm*' \) -print 2>/dev/null
 ```
 
 Expected retained data depends on the uninstall mode:
