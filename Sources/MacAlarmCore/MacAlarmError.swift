@@ -11,6 +11,7 @@ public enum MacAlarmError: Error, Equatable, LocalizedError, Sendable {
     case missingHMACKey(account: String)
     case readOnlySecretStore
     case invalidConfiguration(String)
+    case appGroupUnavailable(String)
 
     public var errorDescription: String? {
         switch self {
@@ -34,6 +35,9 @@ public enum MacAlarmError: Error, Equatable, LocalizedError, Sendable {
             "Secret store is read-only."
         case .invalidConfiguration(let message):
             "Invalid configuration: \(message)"
+        case .appGroupUnavailable(let group):
+            "\(SandboxEnvironment.unavailableReason("the app group container '\(group)' could not be resolved")). "
+                + "Confirm the App Groups capability and provisioning for this signed build."
         }
     }
 }

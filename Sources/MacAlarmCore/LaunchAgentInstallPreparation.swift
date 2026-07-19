@@ -8,6 +8,14 @@ extension LaunchAgentManager {
         createDefaultConfigIfMissing: Bool
     ) async throws -> MacAlarmConfig {
         try await Task.detached(priority: .utility) {
+            // Sandboxed installs put all shared state in the App Group container.
+            // Resolve it up front and fail loudly if it is unavailable, rather
+            // than silently writing into a private container (the split-brain P1
+            // forbids). Unsandboxed installs skip this entirely.
+            if SandboxEnvironment.isSandboxed {
+                _ = try MacAlarmSharedContainer.containerURL()
+            }
+
             let agentURL = URL(fileURLWithPath: PathResolver.expandedPath(agentPath))
             let configURL = URL(fileURLWithPath: PathResolver.expandedPath(configPath))
 
@@ -36,7 +44,7 @@ extension LaunchAgentManager {
                 guard createDefaultConfigIfMissing else {
                     throw MacAlarmError.invalidConfiguration("config is missing: \(configURL.path)")
                 }
-                try MacAlarmConfig().write(to: configURL)
+                try MacAlarmConfig.installedDefault(paths: paths).write(to: configURL)
             }
 
             let config = try MacAlarmConfig.load(from: configURL)

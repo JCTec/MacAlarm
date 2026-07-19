@@ -81,6 +81,15 @@ struct MacAlarmAgentCommand {
             return try MacAlarmConfig.load(from: URL(fileURLWithPath: path))
         }
 
+        // The recorder helper is launched without --config and must read the
+        // installed config from the App Group container when sandboxed. Resolve
+        // the container first so a misconfigured build fails loudly and
+        // attributably instead of silently loading defaults from a private
+        // container (the split-brain P1 forbids).
+        if SandboxEnvironment.isSandboxed {
+            _ = try MacAlarmSharedContainer.containerURL()
+        }
+
         let installedURL = MacAlarmInstallationPaths().configURL
         if FileManager.default.fileExists(atPath: installedURL.path) {
             return try MacAlarmConfig.load(from: installedURL)

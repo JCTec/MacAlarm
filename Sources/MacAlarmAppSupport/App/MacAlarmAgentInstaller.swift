@@ -48,6 +48,14 @@ struct MacAlarmAgentInstaller: Sendable {
 
     func installAndStartAgent() async throws -> MacAlarmRecorderInstallResult {
         MacAlarmLog.installer.info("Recorder install requested")
+
+        // Sandboxed installs must resolve the App Group container before any I/O;
+        // fail loudly and attributably here rather than writing helpers into a
+        // private (split-brain) container. Unsandboxed installs skip this.
+        if Self.isSandboxed {
+            _ = try MacAlarmSharedContainer.containerURL()
+        }
+
         let helpers = try await bundledHelpers()
 
         _ = await manager.stop()

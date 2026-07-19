@@ -364,7 +364,34 @@ public struct RemoteCheckpointConfig: Codable, Equatable, Sendable {
     public static let `default` = RemoteCheckpointConfig()
 }
 
+public extension StorageConfig {
+    /// Storage paths rooted at an absolute base directory. Used for sandboxed
+    /// installs, where the ledger/outbox/runtime must live in the App Group
+    /// container (as absolute paths, since `~` under the sandbox expands to a
+    /// process-private container and would split shared state across processes).
+    static func rooted(at baseDirectory: URL, maxLedgerFileBytes: Int? = nil) -> StorageConfig {
+        StorageConfig(
+            ledgerPath: baseDirectory.appendingPathComponent("events.jsonl").path,
+            outboxDirectory: baseDirectory.appendingPathComponent("outbox", isDirectory: true).path,
+            runtimeDirectory: baseDirectory.appendingPathComponent("runtime", isDirectory: true).path,
+            maxLedgerFileBytes: maxLedgerFileBytes
+        )
+    }
+}
+
 public extension MacAlarmConfig {
+    /// Default config written at install time. Unsandboxed builds keep the
+    /// historical `~/Library` tilde paths unchanged. Sandboxed installs pin the
+    /// storage paths to absolute App Group container paths derived from `paths`,
+    /// so the viewer app, recorder helper, and macalarmctl all resolve the same
+    /// ledger, outbox, runtime, secrets, and spool.
+    static func installedDefault(paths: MacAlarmInstallationPaths) -> MacAlarmConfig {
+        guard SandboxEnvironment.isSandboxed else {
+            return MacAlarmConfig()
+        }
+        return MacAlarmConfig(storage: .rooted(at: paths.installDirectory))
+    }
+
     static func load(from url: URL) throws -> MacAlarmConfig {
         let data = try Data(contentsOf: url)
         return try CanonicalJSON.decoder.decode(MacAlarmConfig.self, from: data)
