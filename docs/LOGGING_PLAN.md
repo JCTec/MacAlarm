@@ -3,6 +3,14 @@
 > Status: Phases 0–5 are implemented (`Sources/MacAlarmCore/MacAlarmLog.swift` plus
 > instrumentation across agent, ledger, sources, delivery, and viewer). Phase 6
 > (CLI `--verbose` plumbing) is intentionally deferred.
+>
+> Sandbox coherence (see [SANDBOX_BEHAVIOR.md](SANDBOX_BEHAVIOR.md)): every
+> capability unavailable under the App Sandbox now emits an attributed `.error`
+> log through `SandboxEnvironment.unavailableReason(_:)` (uniform prefix
+> `unavailable under App Sandbox`), plus a ledger event where writable — spool
+> `query.unavailable` / `watch.unavailable` / `anchor.write.failed`, and
+> `ConfigValidator` warnings/errors. The spool transport (`EventSpool`) and the
+> app `WatchService` log under the `sources`/`appshell` categories.
 
 A staged walkthrough for adding structured diagnostic logging across MacAlarm. The goal is to make any failure diagnosable from `log stream` output without attaching a debugger — while keeping logs quiet by default, privacy-safe, and out of performance-critical paths.
 

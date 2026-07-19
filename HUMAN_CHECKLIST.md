@@ -30,10 +30,13 @@ below states what to do and how to confirm it.
 
 3. **verify-release.sh packaged-helper smoke test needs a real signing
    identity.** On macOS 26 (Darwin 25+), an *ad-hoc*-signed binary carrying
-   `com.apple.security.app-sandbox` SIGTRAPs when launched standalone (this is
-   OS behavior, independent of MacAlarm code — unsigned and no-entitlement
-   builds run fine). `scripts/verify-release.sh` runs the sandboxed helpers
-   directly, so it only completes with a real identity:
+   `com.apple.security.app-sandbox` cannot launch standalone — it either SIGTRAPs
+   or hangs and is killed by the sandbox (both observed; the exact mode varies
+   with the entitlement set). This is OS behavior, independent of MacAlarm code:
+   unsigned and no-entitlement builds of the same binary run instantly, and the
+   bounded end-to-end spool test (F4) passes on the unsigned SwiftPM binaries.
+   `scripts/verify-release.sh` runs the sandboxed helpers directly, so it only
+   completes with a real identity:
    ```sh
    MACALARM_SIGN_IDENTITY="Apple Development: <you>" ./scripts/verify-release.sh
    ```

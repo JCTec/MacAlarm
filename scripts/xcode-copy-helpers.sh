@@ -24,7 +24,13 @@ case "${CONFIGURATION:-Debug}" in
 esac
 
 echo "note: building helper executables ($SWIFT_CONFIG) with SwiftPM"
-xcrun swift build -c "$SWIFT_CONFIG" --product macalarm-agent --product macalarmctl
+# Build one product per invocation (mirrors package-release.sh). A single
+# multi-product `swift build` can short-circuit and skip a product when the
+# shared .build tree is in a mixed/incremental state, leaving the helper
+# missing; per-product builds are reliable.
+for product in macalarm-agent macalarmctl; do
+  xcrun swift build -c "$SWIFT_CONFIG" --product "$product"
+done
 BIN_PATH="$(xcrun swift build -c "$SWIFT_CONFIG" --show-bin-path)"
 
 # The app bundle being built. TARGET_BUILD_DIR / UNLOCALIZED_RESOURCES_FOLDER_PATH
