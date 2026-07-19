@@ -5,6 +5,7 @@ enum DoctorReportRenderer {
         var lines = [String]()
         lines.append("MacAlarm Doctor")
         lines.append("Checked: \(report.checkedAt)")
+        lines.append("Sandboxed: \(report.sandboxed)")
         lines.append("Status: \(report.healthy ? "healthy" : "needs attention")")
         lines.append("")
         lines.append("Install paths:")
@@ -29,6 +30,14 @@ enum DoctorReportRenderer {
             if let latestEventAt = ledger.latestEventAt, let latestEventName = ledger.latestEventName {
                 lines.append("  Latest event: \(latestEventName) at \(latestEventAt)")
             }
+        }
+
+        if let anchor = report.anchor {
+            lines.append("")
+            lines.append("Anchor:")
+            lines.append("  Enabled: \(anchor.enabled)")
+            lines.append("  Destination: \(anchor.destination)")
+            lines.append("  Last status: \(anchor.lastStatus)")
         }
 
         lines.append("")

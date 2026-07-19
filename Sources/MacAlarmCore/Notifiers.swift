@@ -120,6 +120,17 @@ public struct AppleScriptNotificationNotifier: AlarmNotifier {
     }
 
     public func send(_ alarm: Alarm) async throws -> NotificationDelivery {
+        // Running osascript requires spawning a subprocess, which the App Sandbox
+        // forbids. Fail with the uniform reason instead of attempting it — the
+        // sandboxed notification channel is UserNotifications.
+        guard !SandboxEnvironment.isSandboxed else {
+            return NotificationDelivery(
+                channel: channel,
+                succeeded: false,
+                detail: SandboxEnvironment.unavailableReason("AppleScript notifications spawn osascript")
+            )
+        }
+
         let title = "MacAlarm \(alarm.severity.rawValue.uppercased())"
         let subtitle = "\(alarm.event.source): \(alarm.event.name)"
         let message = alarm.message

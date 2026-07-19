@@ -275,8 +275,41 @@ public final class MacAlarmAgentRuntime {
         unifiedLogTask = Task { [pipeline, statusStore, config = config.unifiedLog] in
             let reader = UnifiedLogReader()
             var seenFingerprintsByQuery = [String: Set<String>]()
+            var reportedUnavailableTemplates = Set<String>()
             while !Task.isCancelled {
                 for template in config.queries {
+                    // System-scope OSLogStore is unavailable under App Sandbox.
+                    // Report each such template once per run as an attributed
+                    // failure, then skip it — other scopes keep polling. Silently
+                    // retrying every interval would be the unknown behavior P1
+                    // forbids, and a per-poll poll.failed event would spam the
+                    // ledger.
+                    if SandboxEnvironment.isSandboxed, template.scope == .system {
+                        if reportedUnavailableTemplates.insert(template.name).inserted {
+                            MacAlarmLog.sources.error(
+                                """
+                                Unified log template '\(template.name, privacy: .public)' \
+                                \(SandboxEnvironment.unavailableReason("system-scope OSLogStore requires an entitlement the sandbox denies"), privacy: .public); \
+                                skipping
+                                """)
+                            await recordAgentEvent(
+                                AlarmEvent(
+                                    source: "unifiedLog",
+                                    name: "query.unavailable",
+                                    severity: .warning,
+                                    metadata: [
+                                        "query": template.name,
+                                        "scope": template.scope.rawValue,
+                                        "reason": "app-sandbox",
+                                    ]
+                                ),
+                                pipeline: pipeline,
+                                statusStore: statusStore
+                            )
+                        }
+                        continue
+                    }
+
                     let query = UnifiedLogQuery(
                         scope: template.scope,
                         since: Date().addingTimeInterval(-template.lookbackSeconds),

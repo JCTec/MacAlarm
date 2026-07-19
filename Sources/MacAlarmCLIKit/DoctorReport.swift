@@ -3,6 +3,7 @@ import MacAlarmCore
 
 struct DoctorReport: Codable, Sendable {
     var checkedAt: Date
+    var sandboxed: Bool
     var healthy: Bool
     var paths: MacAlarmInstallationPaths
     var configPath: String
@@ -11,6 +12,13 @@ struct DoctorReport: Codable, Sendable {
     var launchctl: ProcessExecution
     var notification: NotificationAuthorizationSnapshot
     var ledger: LedgerDoctorSnapshot?
+    var anchor: AnchorDoctorSnapshot?
+}
+
+struct AnchorDoctorSnapshot: Codable, Sendable {
+    var enabled: Bool
+    var destination: String
+    var lastStatus: String
 }
 
 struct DoctorCheck: Codable, Sendable {

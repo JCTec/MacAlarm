@@ -103,6 +103,7 @@ extension MacAlarmTests {
             )
             let report = DoctorReport(
                 checkedAt: Date(timeIntervalSince1970: 21_000),
+                sandboxed: false,
                 healthy: false,
                 paths: paths,
                 configPath: "/tmp/macalarm/config.json",
@@ -127,6 +128,11 @@ extension MacAlarmTests {
                 ledger: ledgerDoctorSnapshot(
                     latestEventAt: Date(timeIntervalSince1970: 20_900),
                     latestEventName: "agent.agent.heartbeat"
+                ),
+                anchor: AnchorDoctorSnapshot(
+                    enabled: true,
+                    destination: "iCloudDrive: /tmp/macalarm/anchors",
+                    lastStatus: "no anchor written yet"
                 )
             )
 
@@ -140,7 +146,14 @@ extension MacAlarmTests {
                 "human report should include latest ledger event"
             )
             try expect(human.contains("Next checks:"), "human report should include remediation commands")
+            try expect(human.contains("Sandboxed: false"), "human report should include the sandboxed field")
+            try expect(
+                human.contains("Destination: iCloudDrive: /tmp/macalarm/anchors"),
+                "human report should include the anchor destination")
+            try expect(
+                human.contains("Last status: no anchor written yet"), "human report should include anchor status")
             try expect(json.contains("\"healthy\" : false"), "json report should include health field")
+            try expect(json.contains("\"sandboxed\" : false"), "json report should include the sandboxed field")
             try expect(json.contains("\"launchctl\""), "json report should include launchctl details")
         }
     }

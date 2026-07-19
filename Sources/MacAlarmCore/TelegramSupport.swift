@@ -242,6 +242,16 @@ public actor TelegramNotifier: AlarmNotifier {
         guard config.enabled else {
             return NotificationDelivery(channel: channel, succeeded: false, detail: "telegram disabled")
         }
+        // Outbound HTTPS under the sandbox needs com.apple.security.network.client.
+        // Without it, fail with the uniform reason instead of a bare network error.
+        guard !SandboxEnvironment.isSandboxed || ProcessEntitlements.hasNetworkClient else {
+            return NotificationDelivery(
+                channel: channel,
+                succeeded: false,
+                detail: SandboxEnvironment.unavailableReason(
+                    "Telegram needs the com.apple.security.network.client entitlement")
+            )
+        }
         guard filter.shouldSend(alarm) else {
             return NotificationDelivery(channel: channel, succeeded: true, detail: "telegram filter skipped alarm")
         }

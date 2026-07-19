@@ -5,6 +5,7 @@ extension MacAlarmTests {
         await runSandboxEnvironmentTests(runner)
         await runSharedContainerTests(runner)
         await runAnchorDestinationTests(runner)
+        await runAttributedFailureTests(runner)
         await runCoreLedgerTests(runner)
         await runCoreRuleTests(runner)
         await runCoreConfigSecretTests(runner)

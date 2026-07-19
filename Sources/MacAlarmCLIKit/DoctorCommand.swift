@@ -24,7 +24,27 @@ public struct DoctorCommand {
         let paths = MacAlarmInstallationPaths()
         let configURL = URL(fileURLWithPath: optionValue("--config") ?? paths.configURL.path)
         let checkedAt = Date()
+        let sandboxed = SandboxEnvironment.isSandboxed
         var checks = [DoctorCheck]()
+
+        // Under the sandbox every install path lives in the App Group container.
+        // Probe it first: when it cannot be resolved the file checks below will
+        // all read as "missing", so attribute the root cause to the sandbox
+        // rather than leaving those failures unexplained.
+        if sandboxed {
+            do {
+                let container = try MacAlarmSharedContainer.containerURL()
+                checks.append(.pass("app group container", container.path, required: true))
+            } catch {
+                checks.append(
+                    .fail(
+                        "app group container",
+                        "\(String(describing: error)) — install paths below cannot be resolved",
+                        required: true
+                    )
+                )
+            }
+        }
 
         let fileSnapshot = await FileSnapshot.capture(paths: paths, configURL: configURL)
         checks.append(fileSnapshot.check(name: "agent binary", file: \.agentBinary, required: true))
@@ -112,8 +132,19 @@ public struct DoctorCommand {
             }
         }
 
+        let anchor = await anchorSnapshot(config: config)
+        if let anchor, anchor.enabled {
+            checks.append(.pass("anchor destination", anchor.destination))
+            let anchorUnavailable = anchor.lastStatus.hasPrefix("unavailable")
+            checks.append(
+                anchorUnavailable
+                    ? .warning("anchor status", anchor.lastStatus, required: false)
+                    : .pass("anchor status", anchor.lastStatus))
+        }
+
         return DoctorReport(
             checkedAt: checkedAt,
+            sandboxed: sandboxed,
             healthy: !checks.contains { $0.required && $0.status == .fail },
             paths: paths,
             configPath: configURL.path,
@@ -121,8 +152,45 @@ public struct DoctorCommand {
             checks: checks,
             launchctl: launchctl,
             notification: notification,
-            ledger: ledger
+            ledger: ledger,
+            anchor: anchor
         )
+    }
+
+    /// Resolves the anchor destination and reads the last written anchor, off the
+    /// main thread (iCloud ubiquity resolution blocks). An unavailable iCloud
+    /// container is reported as an attributed status string, not an error.
+    private func anchorSnapshot(config: MacAlarmConfig?) async -> AnchorDoctorSnapshot? {
+        guard let config else {
+            return nil
+        }
+        let anchorConfig = config.hashAnchor
+        return await Task.detached(priority: .utility) {
+            let resolver = AnchorDestinationResolver(config: anchorConfig)
+            guard anchorConfig.enabled else {
+                return AnchorDoctorSnapshot(
+                    enabled: false, destination: resolver.describeDestination(), lastStatus: "anchoring disabled")
+            }
+
+            let destination = resolver.describeDestination()
+            do {
+                let directory = try resolver.resolveDirectory()
+                if let latest = try? FileLedgerHashAnchorSink.readLatest(directory: directory) {
+                    let status =
+                        "record \(latest.recordCount), hash \(latest.lastHash.prefix(12))…, "
+                        + "valid=\(latest.isLedgerValid), at \(latest.createdAt)"
+                    return AnchorDoctorSnapshot(enabled: true, destination: destination, lastStatus: status)
+                }
+                return AnchorDoctorSnapshot(
+                    enabled: true, destination: destination, lastStatus: "no anchor written yet")
+            } catch {
+                return AnchorDoctorSnapshot(
+                    enabled: true,
+                    destination: destination,
+                    lastStatus: "unavailable: \(String(describing: error))"
+                )
+            }
+        }.value
     }
 
     private func optionValue(_ option: String) -> String? {

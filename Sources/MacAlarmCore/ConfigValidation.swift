@@ -114,6 +114,55 @@ public enum ConfigValidator {
             issues.append(ConfigIssue(message: "Duplicate rule id: \(id)", severity: .critical))
         }
 
+        issues.append(contentsOf: sandboxIssues(config))
+
         return ConfigValidation(isValid: !issues.contains { $0.severity >= .critical }, issues: issues)
+    }
+
+    /// Warnings for capabilities that the running process cannot honor under the
+    /// App Sandbox. These mirror the runtime attributed-failure behaviors (Part
+    /// D) so a sandboxed misconfiguration is visible at validate time, not only
+    /// after the feature silently fails.
+    private static func sandboxIssues(_ config: MacAlarmConfig) -> [ConfigIssue] {
+        guard SandboxEnvironment.isSandboxed else {
+            return []
+        }
+
+        var issues = [ConfigIssue]()
+
+        if config.unifiedLog.enabled {
+            let systemTemplates = config.unifiedLog.queries.filter { $0.scope == .system }.map(\.name)
+            if !systemTemplates.isEmpty {
+                issues.append(
+                    ConfigIssue(
+                        message:
+                            "unifiedLog templates \(systemTemplates.joined(separator: ", ")) use system scope, "
+                            + SandboxEnvironment.unavailableReason("system-scope OSLogStore is denied")
+                            + "; they will be skipped"
+                    ))
+            }
+        }
+
+        if config.notifications.appleScriptFallback {
+            issues.append(
+                ConfigIssue(
+                    message:
+                        "notifications.appleScriptFallback is "
+                        + SandboxEnvironment.unavailableReason("osascript cannot be spawned")
+                        + "; UserNotifications is the sandboxed channel"
+                ))
+        }
+
+        if config.telegram.enabled, !ProcessEntitlements.hasNetworkClient {
+            issues.append(
+                ConfigIssue(
+                    message:
+                        "telegram is enabled but "
+                        + SandboxEnvironment.unavailableReason(
+                            "the com.apple.security.network.client entitlement is missing")
+                ))
+        }
+
+        return issues
     }
 }
