@@ -130,21 +130,67 @@ public struct StorageConfig: Codable, Equatable, Sendable {
     public var ledgerPath: String
     public var outboxDirectory: String
     public var runtimeDirectory: String
+    /// Directory the event spool uses: producers drop one canonical-JSON event
+    /// file here and the agent ingests + deletes them (Part E). Under the sandbox
+    /// this resolves into the App Group container so app, recorder, and
+    /// macalarmctl share it.
+    public var spoolDirectory: String
     /// Optional size limit for the active ledger file. When set, the ledger
     /// rotates the active file into an archived segment on append and starts a
     /// new segment that continues the same hash chain. Nil disables rotation.
     public var maxLedgerFileBytes: Int?
 
+    public static let defaultLedgerPath = "~/Library/Application Support/MacAlarm/events.jsonl"
+    public static let defaultOutboxDirectory = "~/Library/Application Support/MacAlarm/outbox"
+    public static let defaultRuntimeDirectory = "~/Library/Application Support/MacAlarm/runtime"
+    public static let defaultSpoolDirectory = "~/Library/Application Support/MacAlarm/spool"
+
     public init(
-        ledgerPath: String = "~/Library/Application Support/MacAlarm/events.jsonl",
-        outboxDirectory: String = "~/Library/Application Support/MacAlarm/outbox",
-        runtimeDirectory: String = "~/Library/Application Support/MacAlarm/runtime",
+        ledgerPath: String = StorageConfig.defaultLedgerPath,
+        outboxDirectory: String = StorageConfig.defaultOutboxDirectory,
+        runtimeDirectory: String = StorageConfig.defaultRuntimeDirectory,
+        spoolDirectory: String = StorageConfig.defaultSpoolDirectory,
         maxLedgerFileBytes: Int? = nil
     ) {
         self.ledgerPath = ledgerPath
         self.outboxDirectory = outboxDirectory
         self.runtimeDirectory = runtimeDirectory
+        self.spoolDirectory = spoolDirectory
         self.maxLedgerFileBytes = maxLedgerFileBytes
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case ledgerPath
+        case outboxDirectory
+        case runtimeDirectory
+        case spoolDirectory
+        case maxLedgerFileBytes
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.ledgerPath = try container.decodeIfPresent(String.self, forKey: .ledgerPath) ?? Self.defaultLedgerPath
+        self.outboxDirectory =
+            try container.decodeIfPresent(String.self, forKey: .outboxDirectory) ?? Self.defaultOutboxDirectory
+        self.runtimeDirectory =
+            try container.decodeIfPresent(String.self, forKey: .runtimeDirectory) ?? Self.defaultRuntimeDirectory
+        // A config predating the spool field derives the spool directory beside
+        // the ledger so old installs pick it up transparently.
+        if let spool = try container.decodeIfPresent(String.self, forKey: .spoolDirectory) {
+            self.spoolDirectory = spool
+        } else {
+            self.spoolDirectory = Self.deriveSpoolDirectory(fromLedgerPath: ledgerPath)
+        }
+        self.maxLedgerFileBytes = try container.decodeIfPresent(Int.self, forKey: .maxLedgerFileBytes)
+    }
+
+    /// Derives a spool directory beside the ledger, so a config that predates the
+    /// `spoolDirectory` field still resolves the spool inside the same install
+    /// tree (including the App Group container for sandboxed installs).
+    static func deriveSpoolDirectory(fromLedgerPath ledgerPath: String) -> String {
+        // Operate on the string so a leading `~` is preserved (URL(fileURLWithPath:)
+        // would resolve it against the current directory).
+        (ledgerPath as NSString).deletingLastPathComponent + "/spool"
     }
 
     public static let `default` = StorageConfig()
@@ -409,6 +455,7 @@ public extension StorageConfig {
             ledgerPath: baseDirectory.appendingPathComponent("events.jsonl").path,
             outboxDirectory: baseDirectory.appendingPathComponent("outbox", isDirectory: true).path,
             runtimeDirectory: baseDirectory.appendingPathComponent("runtime", isDirectory: true).path,
+            spoolDirectory: baseDirectory.appendingPathComponent("spool", isDirectory: true).path,
             maxLedgerFileBytes: maxLedgerFileBytes
         )
     }

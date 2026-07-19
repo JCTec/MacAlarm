@@ -153,25 +153,68 @@ struct MacAlarmCLI {
     private static func emitLog(_ arguments: [String]) throws {
         let name = try requiredOption("--name", in: arguments)
         let severity = try AlarmSeverity(argument: optionValue("--severity", in: arguments) ?? "notice")
-        let subsystem = optionValue("--subsystem", in: arguments) ?? "dev.jc.macalarm.custom"
+        let explicitSubsystem = optionValue("--subsystem", in: arguments)
         let category = optionValue("--category", in: arguments) ?? "event"
         let message = optionValue("--message", in: arguments)
         let metadata = try metadataValues(from: optionValues("--metadata", in: arguments))
         let payload = CustomLogEventPayload(name: name, severity: severity, message: message, metadata: metadata)
-        let logLine = try payload.logLine()
 
+        // Prefer the spool when the installed layout is present and no custom
+        // subsystem was requested: the spool is the transport the agent ingests
+        // in both sandboxed and unsandboxed builds (and the only one that works
+        // sandboxed, where system-scope unified-log reads are denied). A custom
+        // --subsystem keeps the unified-log path for third-party predicates.
+        if explicitSubsystem == nil, let spoolURL = installedSpoolDirectory(arguments) {
+            let url = try EventSpool.write(payload, to: spoolURL)
+            printJSON(
+                CustomLogEmission(
+                    subsystem: nil,
+                    category: nil,
+                    transport: "spool",
+                    spoolPath: url.path,
+                    name: name,
+                    severity: severity,
+                    message: message,
+                    metadata: metadata
+                )
+            )
+            return
+        }
+
+        let subsystem = explicitSubsystem ?? "dev.jc.macalarm.custom"
+        let logLine = try payload.logLine()
         os_log("%{public}@", log: OSLog(subsystem: subsystem, category: category), type: severity.osLogType, logLine)
 
         printJSON(
             CustomLogEmission(
                 subsystem: subsystem,
                 category: category,
+                transport: "unified-log",
+                spoolPath: nil,
                 name: name,
                 severity: severity,
                 message: message,
                 metadata: metadata
             )
         )
+    }
+
+    /// Resolves the spool directory from `--config` when given, otherwise from the
+    /// installed config. Returns nil when no installed layout is present, so
+    /// emit-log falls back to unified logging.
+    private static func installedSpoolDirectory(_ arguments: [String]) -> URL? {
+        let configURL: URL
+        if let path = optionValue("--config", in: arguments) {
+            configURL = URL(fileURLWithPath: path)
+        } else {
+            configURL = MacAlarmInstallationPaths().configURL
+        }
+        guard FileManager.default.fileExists(atPath: configURL.path),
+            let config = try? MacAlarmConfig.load(from: configURL)
+        else {
+            return nil
+        }
+        return PathResolver.fileURL(config.storage.spoolDirectory)
     }
 
     private static func telegramSetToken(_ arguments: [String]) throws {
@@ -384,8 +427,10 @@ private extension Array where Element: Equatable {
 }
 
 private struct CustomLogEmission: Codable {
-    var subsystem: String
-    var category: String
+    var subsystem: String?
+    var category: String?
+    var transport: String
+    var spoolPath: String?
     var name: String
     var severity: AlarmSeverity
     var message: String?

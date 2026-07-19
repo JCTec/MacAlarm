@@ -53,25 +53,47 @@ public final class FileEventSource {
         }
 
         descriptor = openedDescriptor
+        // Build the source and its handlers in a nonisolated context. If the
+        // event-handler closure were formed here (a @MainActor method) Swift 6
+        // would infer it as MainActor-isolated, and Dispatch's client callout
+        // would assert the main queue while the handler actually runs on `queue`
+        // (a background queue) — a hard crash on recent macOS. The nonisolated
+        // helper keeps the handler unisolated so it runs safely off-main.
+        let dispatchSource = Self.makeFileSystemSource(
+            descriptor: openedDescriptor,
+            path: path,
+            queue: queue,
+            handler: handler
+        )
+
+        source = dispatchSource
+        dispatchSource.resume()
+    }
+
+    private nonisolated static func makeFileSystemSource(
+        descriptor: CInt,
+        path: String,
+        queue: DispatchQueue,
+        handler: @escaping @Sendable (FileEvent) -> Void
+    ) -> DispatchSourceFileSystemObject {
         let dispatchSource = DispatchSource.makeFileSystemObjectSource(
-            fileDescriptor: openedDescriptor,
+            fileDescriptor: descriptor,
             eventMask: [.write, .extend, .attrib, .delete, .rename, .revoke],
             queue: queue
         )
 
-        dispatchSource.setEventHandler { [path] in
+        dispatchSource.setEventHandler {
             let flags = dispatchSource.data.flagNames
             MacAlarmLog.sources.debug(
                 "File event delivered (\(flags.joined(separator: ","), privacy: .public))")
             handler(FileEvent(path: path, flags: flags))
         }
 
-        dispatchSource.setCancelHandler { [openedDescriptor] in
-            close(openedDescriptor)
+        dispatchSource.setCancelHandler {
+            close(descriptor)
         }
 
-        source = dispatchSource
-        dispatchSource.resume()
+        return dispatchSource
     }
 
     public func stop() {

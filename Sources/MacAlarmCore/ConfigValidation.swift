@@ -163,6 +163,20 @@ public enum ConfigValidator {
                 ))
         }
 
+        for watchedPath in config.filesystem.watchedPaths {
+            let expanded = PathResolver.expandedPath(watchedPath.path)
+            guard !MacAlarmSharedContainer.isInsideContainer(expanded) else {
+                continue
+            }
+            let detail =
+                "filesystem.watchedPaths '\(watchedPath.label)' is outside the App Group container and "
+                + SandboxEnvironment.unavailableReason("the sandboxed agent cannot watch it")
+            // A required out-of-container path is a critical misconfiguration; an
+            // optional one is a warning. User-selected folders are watched by the
+            // app's WatchService, not the agent (Part E2).
+            issues.append(ConfigIssue(message: detail, severity: watchedPath.required ? .critical : .warning))
+        }
+
         return issues
     }
 }

@@ -36,6 +36,10 @@ extension LaunchAgentManager {
                 withIntermediateDirectories: true
             )
             try FileManager.default.createDirectory(
+                at: paths.installDirectory.appendingPathComponent("spool", isDirectory: true),
+                withIntermediateDirectories: true
+            )
+            try FileManager.default.createDirectory(
                 at: paths.plistURL.deletingLastPathComponent(),
                 withIntermediateDirectories: true
             )

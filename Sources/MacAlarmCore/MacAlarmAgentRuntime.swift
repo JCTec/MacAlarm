@@ -7,6 +7,8 @@ public final class MacAlarmAgentRuntime {
     private let statusStore: AgentStatusStore
     private var sessionEventSource: SessionEventSource?
     private var fileEventSources = [FileEventSource]()
+    private var spoolEventSource: FileEventSource?
+    private var spoolIngestor: SpoolIngestor?
     private var heartbeatTask: Task<Void, Never>?
     private var unifiedLogTask: Task<Void, Never>?
     private var telegramPollingTask: Task<Void, Never>?
@@ -103,6 +105,7 @@ public final class MacAlarmAgentRuntime {
             startSessionEvents()
         }
 
+        startSpoolWatching()
         startFileEvents()
 
         if config.heartbeat.enabled {
@@ -133,6 +136,10 @@ public final class MacAlarmAgentRuntime {
 
         sessionEventSource?.stop()
         sessionEventSource = nil
+
+        spoolEventSource?.stop()
+        spoolEventSource = nil
+        spoolIngestor = nil
 
         for source in fileEventSources {
             source.stop()
@@ -181,9 +188,81 @@ public final class MacAlarmAgentRuntime {
         MacAlarmLog.sources.info("Session event source started")
     }
 
+    /// Watches the event spool directory and ingests dropped event files into the
+    /// ledger. This is the primary custom-event transport for both sandboxed and
+    /// unsandboxed builds; unified-log ingestion remains for third-party producers
+    /// unsandboxed.
+    private func startSpoolWatching() {
+        let spoolURL = PathResolver.fileURL(config.storage.spoolDirectory)
+        do {
+            try FileManager.default.createDirectory(at: spoolURL, withIntermediateDirectories: true)
+        } catch {
+            MacAlarmLog.sources.error(
+                "Spool directory could not be created (\(spoolURL.path, privacy: .public)): \(String(describing: error), privacy: .public)"
+            )
+            return
+        }
+
+        let ingestor = SpoolIngestor(directory: spoolURL) { [pipeline, statusStore] event in
+            let result = await pipeline.record(event)
+            await statusStore.record(event: event, result: result)
+            return result.record != nil
+        }
+        spoolIngestor = ingestor
+
+        // Drain anything already waiting (files produced while the agent was down).
+        Task { await ingestor.ingestPending() }
+
+        let source = FileEventSource(path: spoolURL.path)
+        do {
+            try source.start { _ in
+                Task { await ingestor.ingestPending() }
+            }
+            spoolEventSource = source
+            MacAlarmLog.sources.info("Spool watch started")
+        } catch {
+            MacAlarmLog.sources.error(
+                "Spool watch failed (\(spoolURL.path, privacy: .public)): \(String(describing: error), privacy: .public)"
+            )
+        }
+    }
+
     private func startFileEvents() {
         for watchedPath in config.filesystem.watchedPaths {
             let expandedPath = PathResolver.expandedPath(watchedPath.path)
+
+            // A sandboxed agent can only watch paths inside its App Group
+            // container; anything else is denied. Report it once per path (this
+            // loop runs once per run) as an attributed failure and skip it —
+            // container-relative paths keep watching normally. User-selected
+            // folders are watched by the app's WatchService (Part E2), not here.
+            if SandboxEnvironment.isSandboxed, !MacAlarmSharedContainer.isInsideContainer(expandedPath) {
+                MacAlarmLog.sources.error(
+                    """
+                    File watch for '\(watchedPath.label, privacy: .public)' \
+                    \(SandboxEnvironment.unavailableReason("the path is outside the App Group container"), privacy: .public); \
+                    skipping
+                    """)
+                Task { [pipeline, statusStore] in
+                    await recordAgentEvent(
+                        AlarmEvent(
+                            source: "filesystem",
+                            name: "watch.unavailable",
+                            severity: watchedPath.required ? .warning : .info,
+                            metadata: [
+                                "label": watchedPath.label,
+                                "path": expandedPath,
+                                "required": String(watchedPath.required),
+                                "reason": "app-sandbox",
+                            ]
+                        ),
+                        pipeline: pipeline,
+                        statusStore: statusStore
+                    )
+                }
+                continue
+            }
+
             guard FileManager.default.fileExists(atPath: expandedPath) else {
                 MacAlarmLog.sources.notice(
                     """

@@ -64,6 +64,19 @@ public enum MacAlarmSharedContainer {
         return url
     }
 
+    /// Whether `path` resolves inside the App Group container. Used to decide
+    /// which configured watch paths a sandboxed agent can actually observe (only
+    /// container-relative ones). Returns false when the container is unresolvable,
+    /// so every path is treated as outside.
+    public static func isInsideContainer(_ path: String) -> Bool {
+        guard let container = try? containerURL() else {
+            return false
+        }
+        let normalized = URL(fileURLWithPath: path).standardizedFileURL.path
+        let base = container.standardizedFileURL.path
+        return normalized == base || normalized.hasPrefix(base + "/")
+    }
+
     /// Base directory holding all shared MacAlarm state under the sandbox:
     /// `<App Group container>/Application Support/MacAlarm`.
     public static func storageDirectory() throws -> URL {
