@@ -12,6 +12,7 @@ public enum MacAlarmError: Error, Equatable, LocalizedError, Sendable {
     case readOnlySecretStore
     case invalidConfiguration(String)
     case appGroupUnavailable(String)
+    case iCloudUnavailable(String)
 
     public var errorDescription: String? {
         switch self {
@@ -38,6 +39,9 @@ public enum MacAlarmError: Error, Equatable, LocalizedError, Sendable {
         case .appGroupUnavailable(let group):
             "\(SandboxEnvironment.unavailableReason("the app group container '\(group)' could not be resolved")). "
                 + "Confirm the App Groups capability and provisioning for this signed build."
+        case .iCloudUnavailable(let container):
+            "iCloud Drive is unavailable (signed out, or ubiquity container '\(container)' is nil); "
+                + "hash anchors cannot be written until iCloud is signed in."
         }
     }
 }

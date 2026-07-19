@@ -21,5 +21,19 @@
 	<array>
 		<string>S8662L649U.com.jctec.macalarm.shared</string>
 	</array>
+	<!-- The recorder helper writes ledger hash anchors, so it needs the same
+	     iCloud Drive (ubiquity container) access as the app (Part C). -->
+	<key>com.apple.developer.icloud-container-identifiers</key>
+	<array>
+		<string>iCloud.com.jctec.macalarm</string>
+	</array>
+	<key>com.apple.developer.ubiquity-container-identifiers</key>
+	<array>
+		<string>iCloud.com.jctec.macalarm</string>
+	</array>
+	<key>com.apple.developer.icloud-services</key>
+	<array>
+		<string>CloudDocuments</string>
+	</array>
 </dict>
 </plist>

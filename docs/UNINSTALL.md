@@ -22,12 +22,21 @@ A normal per-user install may create:
 
 ~/Library/LaunchAgents/com.jctec.macalarm.agent.plist
 
-~/Library/Mobile Documents/com~apple~CloudDocs/MacAlarm/
+~/Library/Mobile Documents/com~apple~CloudDocs/MacAlarm/     # unsandboxed iCloudDrive anchors
+  anchor-latest.json
+  anchor-history.jsonl
+
+~/Library/Mobile Documents/iCloud~com~jctec~macalarm/Documents/MacAlarm/   # sandboxed (App Store) iCloudDrive anchors
   anchor-latest.json
   anchor-history.jsonl
 ```
 
-The iCloud Drive `MacAlarm` folder holds ledger hash anchors (see `hashAnchor` in `config.json`). It syncs off the Mac by design; a full cleanup should remove it from iCloud Drive as well. If `storage.maxLedgerFileBytes` is set, rotated ledger segments named `events-rotated-*.jsonl` sit beside `events.jsonl`.
+The iCloud Drive `MacAlarm` folder holds ledger hash anchors (see `hashAnchor` in `config.json`). Its exact location depends on `hashAnchor.destination`:
+
+- `iCloudDrive` (default): the unsandboxed build uses `~/Library/Mobile Documents/com~apple~CloudDocs/MacAlarm/`; the sandboxed Mac App Store build uses its ubiquity container `~/Library/Mobile Documents/iCloud~com~jctec~macalarm/Documents/MacAlarm/`. Both sync off the Mac by design; a full cleanup should remove the folder from iCloud Drive as well.
+- `directory`: anchors live at the literal `hashAnchor.directory` path — remove that folder instead.
+
+The sandboxed App Store build also keeps all of its ledger/config/secrets/runtime/outbox/spool state inside the App Group container at `~/Library/Group Containers/S8662L649U.com.jctec.macalarm.shared/`; removing that directory clears the sandboxed install. If `storage.maxLedgerFileBytes` is set, rotated ledger segments named `events-rotated-*.jsonl` sit beside `events.jsonl`.
 
 Packaged builds prefer the visible login item helper bundled inside `MacAlarm.app`:
 

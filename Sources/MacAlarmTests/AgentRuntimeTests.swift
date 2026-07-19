@@ -24,7 +24,7 @@ extension MacAlarmTests {
                 remoteCheckpoint: RemoteCheckpointConfig(
                     enabled: true, endpointURL: "https://example.invalid/checkpoints", outboxOnly: true),
                 hashAnchor: HashAnchorConfig(
-                    enabled: true, directory: anchorURL.path, anchorEveryHeartbeats: 1),
+                    enabled: true, directory: anchorURL.path, anchorEveryHeartbeats: 1, destination: .directory),
                 rules: []
             )
             let runtime = try await MainActor.run {

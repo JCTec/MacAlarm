@@ -332,19 +332,54 @@ public struct TelegramConfig: Codable, Equatable, Sendable {
     public static let `default` = TelegramConfig()
 }
 
+/// Where ledger hash anchors are written.
+///
+/// - `iCloudDrive`: environment-aware iCloud location — the CloudDocs folder
+///   when unsandboxed, the app's ubiquity container when sandboxed. This is the
+///   default so anchors leave the Mac's own trust domain.
+/// - `directory`: the literal `HashAnchorConfig.directory` path, for users who
+///   pin anchors to a specific local/synced folder.
+public enum AnchorDestination: String, Codable, Equatable, Sendable {
+    case iCloudDrive
+    case directory
+}
+
 public struct HashAnchorConfig: Codable, Equatable, Sendable {
     public var enabled: Bool
     public var directory: String
     public var anchorEveryHeartbeats: Int
+    public var destination: AnchorDestination
+
+    public static let defaultDirectory = "~/Library/Mobile Documents/com~apple~CloudDocs/MacAlarm"
 
     public init(
         enabled: Bool = true,
-        directory: String = "~/Library/Mobile Documents/com~apple~CloudDocs/MacAlarm",
-        anchorEveryHeartbeats: Int = 5
+        directory: String = HashAnchorConfig.defaultDirectory,
+        anchorEveryHeartbeats: Int = 5,
+        destination: AnchorDestination = .iCloudDrive
     ) {
         self.enabled = enabled
         self.directory = directory
         self.anchorEveryHeartbeats = anchorEveryHeartbeats
+        self.destination = destination
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case enabled
+        case directory
+        case anchorEveryHeartbeats
+        case destination
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.enabled = try container.decodeIfPresent(Bool.self, forKey: .enabled) ?? true
+        self.directory = try container.decodeIfPresent(String.self, forKey: .directory) ?? Self.defaultDirectory
+        self.anchorEveryHeartbeats = try container.decodeIfPresent(Int.self, forKey: .anchorEveryHeartbeats) ?? 5
+        // A config predating this field kept writing to `directory`, so an absent
+        // `destination` decodes as `.directory` — byte-for-byte the old behavior.
+        // Freshly created configs default to `.iCloudDrive` (see init above).
+        self.destination = try container.decodeIfPresent(AnchorDestination.self, forKey: .destination) ?? .directory
     }
 
     public static let `default` = HashAnchorConfig()

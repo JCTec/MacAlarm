@@ -31,7 +31,7 @@ public final class MacAlarmAgentRuntime {
             : DisabledRemoteCheckpointSink()
         let anchorSink: any LedgerHashAnchorSink =
             config.hashAnchor.enabled
-            ? FileLedgerHashAnchorSink(directory: PathResolver.fileURL(config.hashAnchor.directory))
+            ? ResolvingLedgerHashAnchorSink(resolver: AnchorDestinationResolver(config: config.hashAnchor))
             : DisabledLedgerHashAnchorSink()
 
         self.pipeline = EventPipeline(
