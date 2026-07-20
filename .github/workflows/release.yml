@@ -1,0 +1,162 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  # Re-tagging (force-pushing the same tag) cancels an in-flight run.
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    name: Build, sign, notarize, publish
+    runs-on: macos-14
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Apple Toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+          swift --version
+
+      - name: Derive version from tag
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "MACALARM_VERSION=${version}" >> "$GITHUB_ENV"
+          echo "Building MacAlarm ${version} from tag ${GITHUB_REF_NAME}"
+
+      - name: Install Tools
+        run: |
+          command -v rg >/dev/null 2>&1 || brew install ripgrep
+          rg --version
+
+      - name: Full gate suite (ad-hoc)
+        run: |
+          ./scripts/verify-release.sh
+          MACALARM_SKIP_RELEASE_BUILD=1 MACALARM_DMG_FINDER_LAYOUT=skip ./scripts/package-dmg.sh
+          ./scripts/audit-distribution.sh
+
+      - name: Determine signing availability
+        id: signing
+        env:
+          CERT_P12: ${{ secrets.MACALARM_CERT_P12 }}
+          CERT_PASSWORD: ${{ secrets.MACALARM_CERT_PASSWORD }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+        run: |
+          if [[ -n "$CERT_P12" && -n "$CERT_PASSWORD" && -n "$NOTARY_KEY_ID" \
+                && -n "$NOTARY_ISSUER_ID" && -n "$NOTARY_KEY_P8" ]]; then
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+            echo "Signing secrets present: producing a signed + notarized release."
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "Signing secrets absent: producing an UNSIGNED prerelease."
+          fi
+
+      - name: Sign, package, and notarize
+        if: steps.signing.outputs.signed == 'true'
+        env:
+          CERT_P12: ${{ secrets.MACALARM_CERT_P12 }}
+          CERT_PASSWORD: ${{ secrets.MACALARM_CERT_PASSWORD }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+        run: |
+          set -euo pipefail
+
+          # Import the Developer ID cert into a throwaway keychain.
+          keychain="$RUNNER_TEMP/macalarm-signing.keychain-db"
+          keychain_pw="$(uuidgen)"
+          security create-keychain -p "$keychain_pw" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_pw" "$keychain"
+
+          echo "$CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$keychain" -P "$CERT_PASSWORD" \
+            -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$keychain_pw" "$keychain" >/dev/null
+          security list-keychains -d user -s "$keychain" login.keychain-db
+
+          identity="$(security find-identity -v -p codesigning "$keychain" \
+            | grep 'Developer ID Application' | head -1 | awk '{print $2}')"
+          if [[ -z "$identity" ]]; then
+            echo "::error::No 'Developer ID Application' identity found in the imported certificate."
+            exit 1
+          fi
+
+          # Build + sign the app and DMG with the Developer ID identity (hardened
+          # runtime is applied by package-release.sh when a real identity is set).
+          export MACALARM_SIGN_IDENTITY="$identity"
+          ./scripts/package-release.sh
+          MACALARM_SKIP_RELEASE_BUILD=1 MACALARM_DMG_FINDER_LAYOUT=skip ./scripts/package-dmg.sh
+
+          dmg="dist/MacAlarm-${MACALARM_VERSION}.dmg"
+
+          # Notarize with the App Store Connect API key, then staple.
+          echo "$NOTARY_KEY_P8" | base64 --decode > "$RUNNER_TEMP/notary.p8"
+          xcrun notarytool submit "$dmg" \
+            --key "$RUNNER_TEMP/notary.p8" \
+            --key-id "$NOTARY_KEY_ID" \
+            --issuer "$NOTARY_ISSUER_ID" \
+            --wait
+          xcrun stapler staple "$dmg"
+          xcrun stapler validate "$dmg"
+          spctl --assess --type open --context context:primary-signature -v "$dmg"
+
+          rm -f "$RUNNER_TEMP/cert.p12" "$RUNNER_TEMP/notary.p8"
+
+      - name: Compute checksum
+        run: |
+          set -euo pipefail
+          # Regenerate after any signing/stapling so the checksum matches the
+          # artifact that is actually uploaded.
+          ( cd dist && shasum -a 256 "MacAlarm-${MACALARM_VERSION}.dmg" \
+              > "MacAlarm-${MACALARM_VERSION}.dmg.sha256" )
+          cat "dist/MacAlarm-${MACALARM_VERSION}.dmg.sha256"
+
+      - name: Assemble release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SIGNED: ${{ steps.signing.outputs.signed }}
+        run: |
+          set -euo pipefail
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+            -f tag_name="${GITHUB_REF_NAME}" --jq .body > "$RUNNER_TEMP/notes.md" || true
+
+          {
+            if [[ "$SIGNED" != "true" ]]; then
+              echo "> ⚠️ **UNSIGNED BUILD — for testing only.** This artifact is ad-hoc"
+              echo "> signed and not notarized; macOS Gatekeeper will warn or block it."
+              echo "> Build from source or wait for a signed release for real use."
+              echo
+            fi
+            cat "$RUNNER_TEMP/notes.md"
+          } > "$RUNNER_TEMP/release-notes.md"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SIGNED: ${{ steps.signing.outputs.signed }}
+        run: |
+          set -euo pipefail
+          args=(
+            "${GITHUB_REF_NAME}"
+            --title "MacAlarm ${MACALARM_VERSION}"
+            --notes-file "$RUNNER_TEMP/release-notes.md"
+            "dist/MacAlarm-${MACALARM_VERSION}.dmg"
+            "dist/MacAlarm-${MACALARM_VERSION}.dmg.sha256"
+          )
+          if [[ "$SIGNED" != "true" ]]; then
+            args+=(--prerelease)
+          fi
+          gh release create "${args[@]}"
