@@ -1,0 +1,66 @@
+name: Wiki Sync
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "docs/**"
+      - "CONTRIBUTING.md"
+      - ".github/scripts/build-wiki.py"
+      - ".github/workflows/wiki-sync.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wiki-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    name: Render docs to wiki
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and push wiki
+        env:
+          # Prefer a PAT (WIKI_TOKEN) because the default GITHUB_TOKEN often
+          # cannot push to <repo>.wiki.git. Falls back to GITHUB_TOKEN if the
+          # wiki accepts it. See HUMAN_CHECKLIST-GITHUB.md.
+          WIKI_TOKEN: ${{ secrets.WIKI_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+
+          repo="${GITHUB_REPOSITORY}"
+          wiki_url="https://x-access-token:${WIKI_TOKEN}@github.com/${repo}.wiki.git"
+          wiki_dir="$(mktemp -d)"
+
+          if ! git clone "$wiki_url" "$wiki_dir" 2>/dev/null; then
+            echo "::error::Could not clone ${repo}.wiki.git. Enable the wiki and create" \
+                 "one page to initialize it, and set a WIKI_TOKEN secret if the default" \
+                 "token is rejected (see HUMAN_CHECKLIST-GITHUB.md)."
+            exit 1
+          fi
+
+          branch="$(git -C "$wiki_dir" symbolic-ref --short HEAD 2>/dev/null || echo master)"
+
+          # Drop previously generated pages/images so removed docs disappear.
+          find "$wiki_dir" -maxdepth 1 -type f \
+            \( -name '*.md' -o -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.gif' -o -name '*.svg' \) \
+            -delete
+
+          python3 .github/scripts/build-wiki.py "$wiki_dir" "$PWD"
+
+          cd "$wiki_dir"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Wiki already up to date."
+            exit 0
+          fi
+          git commit -m "docs: sync wiki from ${GITHUB_SHA::7}"
+          git push --force origin "HEAD:${branch}"
