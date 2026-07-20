@@ -1,0 +1,44 @@
+# Issue/PR labels for MacAlarm, applied by .github/workflows/labels-sync.yml
+# (crazy-max/ghaction-github-labeler). Edit here; the workflow syncs on push.
+
+# --- Area (which subsystem) ---
+- name: "area:agent"
+  color: "1d76db"
+  description: "Background recorder / agent runtime"
+- name: "area:viewer"
+  color: "1d76db"
+  description: "SwiftUI timeline viewer app"
+- name: "area:ledger"
+  color: "1d76db"
+  description: "Hash-chain ledger, verification, anchoring"
+- name: "area:installer"
+  color: "1d76db"
+  description: "Recorder install, login item, LaunchAgent"
+- name: "area:sandbox"
+  color: "1d76db"
+  description: "App Sandbox, entitlements, App Group container"
+
+# --- Type (what kind of change) ---
+- name: "type:bug"
+  color: "d73a4a"
+  description: "Something is broken"
+- name: "type:feature"
+  color: "0e8a16"
+  description: "New capability or enhancement"
+- name: "type:docs"
+  color: "0075ca"
+  description: "Documentation and wiki"
+- name: "type:security"
+  color: "b60205"
+  description: "Security-sensitive change or report"
+
+# --- Workflow ---
+- name: "good-first-issue"
+  color: "7057ff"
+  description: "Good entry point for new contributors"
+- name: "help-wanted"
+  color: "008672"
+  description: "Maintainers would welcome help here"
+- name: "blocked"
+  color: "e11d21"
+  description: "Blocked on another change, decision, or external step"

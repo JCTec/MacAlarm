@@ -1,0 +1,32 @@
+name: Labels Sync
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/labels.yml"
+      - ".github/workflows/labels-sync.yml"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+concurrency:
+  group: labels-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    name: Apply repository labels
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sync labels
+        uses: crazy-max/ghaction-github-labeler@v5
+        with:
+          yaml_file: .github/labels.yml
+          # Additive: create/update labels from labels.yml but never delete
+          # labels that are not listed (keeps GitHub defaults intact).
+          skip_delete: true

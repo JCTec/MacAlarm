@@ -1,0 +1,15 @@
+version: 2
+updates:
+  # Keep GitHub Actions pinned versions current. MacAlarm has no third-party
+  # package manager (pure SwiftPM + Apple frameworks), so Actions is the only
+  # ecosystem to watch.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+    labels:
+      - "type:security"

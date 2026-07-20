@@ -28,6 +28,30 @@ MACALARM_SKIP_RELEASE_BUILD=1 MACALARM_DMG_FINDER_LAYOUT=skip ./scripts/package-
 
 For the maintainer-facing public release pass, use [Release Checklist](docs/RELEASE_CHECKLIST.md).
 
+## Branches, tags, and releases
+
+- Day-to-day work lands on `main` via pull request; CI must be green.
+- Releases are stabilized on a `release/x.y` branch cut from `main`. Every push
+  to `release/**` runs the full CI gate suite (no artifacts).
+- A release is published by pushing an annotated tag `vX.Y.Z` from the release
+  branch; the [`Release`](.github/workflows/release.yml) workflow builds, signs +
+  notarizes (or produces an unsigned prerelease when signing secrets are absent),
+  and attaches the DMG to a GitHub Release.
+- Hotfixes land on `main` first, then are cherry-picked onto the affected
+  `release/x.y` branch and tagged as a new patch. **Tags are immutable** — never
+  move a published tag; cut a new patch instead.
+
+The full flow lives in [Releasing](docs/RELEASING.md).
+
+## Documentation and the wiki
+
+`docs/` is the source of truth. The project [Wiki](https://github.com/JCTec/MacAlarm/wiki)
+is generated from `docs/**` (and this file) by the
+[`Wiki Sync`](.github/workflows/wiki-sync.yml) workflow on every push to `main` —
+edit the Markdown under `docs/`, not the wiki directly (direct wiki edits are
+overwritten). New docs appear automatically; add a nice sidebar title in
+`.github/scripts/build-wiki.py` if the derived one needs polish.
+
 ## Code Organization
 
 - `MacAlarmCore` contains reusable event, ledger, rule, config, and notifier logic.
