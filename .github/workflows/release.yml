@@ -15,10 +15,10 @@ concurrency:
 jobs:
   release:
     name: Build, sign, notarize, publish
-    # macos-15's default toolchain is the Swift 6.0 the package builds with. (The
-    # macos-14 default is Swift 5.10 — too old — and its newest Xcode is a newer,
-    # stricter Swift than the project targets.)
-    runs-on: macos-15
+    # macos-latest's default toolchain is the Swift 6.0 the package builds with in
+    # CI. Pinning to macos-14 (Swift 5.10, too old) or macos-15 (Swift 6.1+, too
+    # new for the .swift-format config) breaks the gate suite.
+    runs-on: macos-latest
     timeout-minutes: 90
     steps:
       - name: Checkout
