@@ -15,20 +15,14 @@ concurrency:
 jobs:
   release:
     name: Build, sign, notarize, publish
-    runs-on: macos-14
+    # macos-15's default toolchain is the Swift 6.0 the package builds with. (The
+    # macos-14 default is Swift 5.10 — too old — and its newest Xcode is a newer,
+    # stricter Swift than the project targets.)
+    runs-on: macos-15
     timeout-minutes: 90
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Select Xcode (Swift 6)
-        run: |
-          # macos-14 defaults to Xcode 15 / Swift 5.10; the package requires
-          # Swift 6 tools. Select the newest installed Xcode.
-          latest="$(printf '%s\n' /Applications/Xcode_*.app | sort -V | tail -n1)"
-          if [ -d "$latest" ]; then
-            sudo xcode-select -switch "$latest/Contents/Developer"
-          fi
 
       - name: Show Apple Toolchain
         run: |
