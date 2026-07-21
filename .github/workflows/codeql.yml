@@ -1,6 +1,8 @@
 name: CodeQL
 
 on:
+  push:
+    branches: ["main"]
   pull_request:
     branches: ["main"]
   schedule:
@@ -25,6 +27,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Select Xcode (Swift 6)
+        run: |
+          # macos-14 defaults to Xcode 15 / Swift 5.10, but the package requires
+          # Swift 6 tools. Select the newest installed Xcode.
+          latest="$(printf '%s\n' /Applications/Xcode_*.app | sort -V | tail -n1)"
+          if [ -d "$latest" ]; then
+            sudo xcode-select -switch "$latest/Contents/Developer"
+          fi
+          swift --version
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3

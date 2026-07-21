@@ -20,6 +20,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Select Xcode (Swift 6)
+        run: |
+          # Pin the newest installed Xcode so the build never falls back to an
+          # older default toolchain than the package's Swift 6 requirement.
+          latest="$(printf '%s\n' /Applications/Xcode_*.app | sort -V | tail -n1)"
+          if [ -d "$latest" ]; then
+            sudo xcode-select -switch "$latest/Contents/Developer"
+          fi
+
       - name: Show Apple Toolchain
         run: |
           sw_vers
