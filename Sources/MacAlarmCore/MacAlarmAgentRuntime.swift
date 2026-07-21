@@ -497,19 +497,31 @@ public final class MacAlarmAgentRuntime {
     }
 
     private static func unifiedLogFingerprint(_ event: AlarmEvent, queryName: String) -> String {
-        [
+        // Resolve each field into a typed String local before building the array.
+        // A single 10-element array literal with nested `??` chains is a
+        // type-check-timeout hazard — the solver can exceed its time limit under
+        // instrumented builds (e.g. CodeQL). Explicit locals keep it trivial.
+        let metadata = event.metadata
+        let timestamp = String(format: "%.6f", event.observedAt.timeIntervalSince1970)
+        let subsystem = metadata["logSubsystem"] ?? metadata["subsystem"] ?? ""
+        let category = metadata["logCategory"] ?? metadata["category"] ?? ""
+        let process = metadata["logProcess"] ?? metadata["process"] ?? ""
+        let sender = metadata["logSender"] ?? metadata["sender"] ?? ""
+        let message = metadata["logComposedMessage"] ?? metadata["composedMessage"] ?? metadata["message"] ?? ""
+
+        let components: [String] = [
             queryName,
-            String(format: "%.6f", event.observedAt.timeIntervalSince1970),
+            timestamp,
             event.source,
             event.name,
             event.severity.rawValue,
-            event.metadata["logSubsystem"] ?? event.metadata["subsystem"] ?? "",
-            event.metadata["logCategory"] ?? event.metadata["category"] ?? "",
-            event.metadata["logProcess"] ?? event.metadata["process"] ?? "",
-            event.metadata["logSender"] ?? event.metadata["sender"] ?? "",
-            event.metadata["logComposedMessage"] ?? event.metadata["composedMessage"] ?? event.metadata["message"]
-                ?? "",
-        ].joined(separator: "\u{1f}")
+            subsystem,
+            category,
+            process,
+            sender,
+            message,
+        ]
+        return components.joined(separator: "\u{1f}")
     }
 
     private static func trimmedFingerprints(_ fingerprints: Set<String>, limit: Int) -> Set<String> {
